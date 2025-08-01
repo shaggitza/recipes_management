@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: recipes_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - recipes_network
+
+  app:
+    build: .
+    container_name: recipes_app
+    restart: unless-stopped
+    environment:
+      - MONGODB_URL=mongodb://admin:password@mongodb:27017/recipes_db?authSource=admin
+      - DATABASE_NAME=recipes_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./static:/app/static:ro
+      - ./templates:/app/templates:ro
+    networks:
+      - recipes_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  recipes_network:
+    driver: bridge
