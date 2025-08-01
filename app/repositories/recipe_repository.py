@@ -77,37 +77,46 @@ class RecipeRepository(BaseRepository):
         filters: Optional[Dict[str, Any]] = None
     ) -> List[Recipe]:
         """Get recipes with filtering and pagination using Beanie query builder"""
-        query = Recipe.find()
+        query_conditions = []
         
         if filters:
-            # Apply filters using Beanie query syntax
+            # Build query conditions
             if "difficulty" in filters:
-                query = query.find(Recipe.difficulty == filters["difficulty"])
+                query_conditions.append(Recipe.difficulty == filters["difficulty"])
             
             if "tags" in filters:
                 # Support both single tag and multiple tags
                 tags = filters["tags"]
                 if isinstance(tags, str):
                     tags = [tags]
-                query = query.find(Recipe.tags.in_(tags))
+                query_conditions.append(Recipe.tags.in_(tags))
             
             if "meal_times" in filters:
                 # Support both single meal_time and multiple meal_times
                 meal_times = filters["meal_times"]
                 if isinstance(meal_times, str):
                     meal_times = [meal_times]
-                query = query.find(Recipe.meal_times.in_(meal_times))
+                query_conditions.append(Recipe.meal_times.in_(meal_times))
             
             if "search" in filters:
                 # Use text search or regex for multiple fields
                 search_term = filters["search"]
-                query = query.find({
+                query_conditions.append({
                     "$or": [
                         {"title": {"$regex": search_term, "$options": "i"}},
                         {"description": {"$regex": search_term, "$options": "i"}},
                         {"ingredients.name": {"$regex": search_term, "$options": "i"}}
                     ]
                 })
+        
+        # Apply all conditions to the query
+        if query_conditions:
+            if len(query_conditions) == 1:
+                query = Recipe.find(query_conditions[0])
+            else:
+                query = Recipe.find({"$and": query_conditions})
+        else:
+            query = Recipe.find()
         
         return await query.sort(-Recipe.created_at).skip(skip).limit(limit).to_list()
     
@@ -188,21 +197,30 @@ class RecipeRepository(BaseRepository):
     
     async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
         """Count recipes with optional filters"""
-        query = Recipe.find()
+        query_conditions = []
         
         if filters:
             if "difficulty" in filters:
-                query = query.find(Recipe.difficulty == filters["difficulty"])
+                query_conditions.append(Recipe.difficulty == filters["difficulty"])
             if "tags" in filters:
                 tags = filters["tags"]
                 if isinstance(tags, str):
                     tags = [tags]
-                query = query.find(Recipe.tags.in_(tags))
+                query_conditions.append(Recipe.tags.in_(tags))
             if "meal_times" in filters:
                 meal_times = filters["meal_times"]
                 if isinstance(meal_times, str):
                     meal_times = [meal_times]
-                query = query.find(Recipe.meal_times.in_(meal_times))
+                query_conditions.append(Recipe.meal_times.in_(meal_times))
+        
+        # Apply all conditions to the query
+        if query_conditions:
+            if len(query_conditions) == 1:
+                query = Recipe.find(query_conditions[0])
+            else:
+                query = Recipe.find({"$and": query_conditions})
+        else:
+            query = Recipe.find()
         
         return await query.count()
     
