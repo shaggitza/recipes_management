@@ -91,6 +91,13 @@ class RecipeRepository(BaseRepository):
                     tags = [tags]
                 query = query.find(Recipe.tags.in_(tags))
             
+            if "meal_times" in filters:
+                # Support both single meal_time and multiple meal_times
+                meal_times = filters["meal_times"]
+                if isinstance(meal_times, str):
+                    meal_times = [meal_times]
+                query = query.find(Recipe.meal_times.in_(meal_times))
+            
             if "search" in filters:
                 # Use text search or regex for multiple fields
                 search_term = filters["search"]
@@ -168,6 +175,17 @@ class RecipeRepository(BaseRepository):
         result = await Recipe.aggregate(pipeline).to_list()
         return [doc["_id"] for doc in result if doc.get("_id")]
     
+    async def get_all_meal_times(self) -> List[str]:
+        """Get all unique meal times using Beanie aggregation"""
+        pipeline = [
+            {"$unwind": "$meal_times"},
+            {"$group": {"_id": "$meal_times"}},
+            {"$sort": {"_id": 1}}
+        ]
+        
+        result = await Recipe.aggregate(pipeline).to_list()
+        return [doc["_id"] for doc in result if doc.get("_id")]
+    
     async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
         """Count recipes with optional filters"""
         query = Recipe.find()
@@ -180,6 +198,11 @@ class RecipeRepository(BaseRepository):
                 if isinstance(tags, str):
                     tags = [tags]
                 query = query.find(Recipe.tags.in_(tags))
+            if "meal_times" in filters:
+                meal_times = filters["meal_times"]
+                if isinstance(meal_times, str):
+                    meal_times = [meal_times]
+                query = query.find(Recipe.meal_times.in_(meal_times))
         
         return await query.count()
     
@@ -190,6 +213,10 @@ class RecipeRepository(BaseRepository):
     async def get_recipes_by_tags(self, tags: List[str]) -> List[Recipe]:
         """Get recipes that contain any of the specified tags"""
         return await Recipe.find(Recipe.tags.in_(tags)).sort(-Recipe.created_at).to_list()
+    
+    async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
+        """Get recipes that contain any of the specified meal times"""
+        return await Recipe.find(Recipe.meal_times.in_(meal_times)).sort(-Recipe.created_at).to_list()
     
     async def get_recent_recipes(self, limit: int = 10) -> List[Recipe]:
         """Get the most recently created recipes"""

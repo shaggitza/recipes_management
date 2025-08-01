@@ -34,6 +34,9 @@
                 <select id="tagFilter" class="filter-select">
                     <option value="">All Tags</option>
                 </select>
+                <select id="mealTimeFilter" class="filter-select" multiple>
+                    <option value="">All Meal Times</option>
+                </select>
             </div>
         </nav>
 
@@ -99,6 +102,18 @@
                 <div class="form-group">
                     <label for="tags">Tags (comma-separated)</label>
                     <input type="text" id="tags" name="tags" placeholder="e.g., vegetarian, quick, dinner">
+                </div>
+
+                <div class="form-group">
+                    <label for="mealTimes">Meal Times</label>
+                    <div class="meal-times-container">
+                        <label class="checkbox-label"><input type="checkbox" value="breakfast" class="meal-time-checkbox"> Breakfast</label>
+                        <label class="checkbox-label"><input type="checkbox" value="lunch" class="meal-time-checkbox"> Lunch</label>
+                        <label class="checkbox-label"><input type="checkbox" value="dinner" class="meal-time-checkbox"> Dinner</label>
+                        <label class="checkbox-label"><input type="checkbox" value="snack" class="meal-time-checkbox"> Snack</label>
+                        <label class="checkbox-label"><input type="checkbox" value="brunch" class="meal-time-checkbox"> Brunch</label>
+                        <label class="checkbox-label"><input type="checkbox" value="dessert" class="meal-time-checkbox"> Dessert</label>
+                    </div>
                 </div>
 
                 <div class="form-group">

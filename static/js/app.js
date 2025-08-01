@@ -12,6 +12,7 @@ class RecipeManager {
         this.bindEvents();
         this.loadRecipes();
         this.loadTags();
+        this.loadMealTimes();
     }
 
     bindEvents() {
@@ -31,6 +32,7 @@ class RecipeManager {
         });
         document.getElementById('difficultyFilter').addEventListener('change', () => this.searchRecipes());
         document.getElementById('tagFilter').addEventListener('change', () => this.searchRecipes());
+        document.getElementById('mealTimeFilter').addEventListener('change', () => this.searchRecipes());
 
         // Dynamic form elements
         document.getElementById('addIngredient').addEventListener('click', () => this.addIngredientRow());
@@ -73,6 +75,16 @@ class RecipeManager {
         }
     }
 
+    async loadMealTimes() {
+        try {
+            const response = await fetch('/api/recipes/meal-times/all');
+            this.mealTimes = await response.json();
+            this.renderMealTimeFilter();
+        } catch (error) {
+            console.error('Error loading meal times:', error);
+        }
+    }
+
     async searchRecipes() {
         try {
             this.showLoading(true);
@@ -80,11 +92,14 @@ class RecipeManager {
             const search = document.getElementById('searchInput').value;
             const difficulty = document.getElementById('difficultyFilter').value;
             const tag = document.getElementById('tagFilter').value;
+            const mealTimeSelect = document.getElementById('mealTimeFilter');
+            const mealTimes = Array.from(mealTimeSelect.selectedOptions).map(option => option.value).filter(v => v);
             
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (difficulty) params.append('difficulty', difficulty);
             if (tag) params.append('tags', tag);
+            if (mealTimes.length > 0) params.append('meal_times', mealTimes.join(','));
             
             const response = await fetch(`/api/recipes/?${params}`);
             this.recipes = await response.json();
@@ -137,6 +152,11 @@ class RecipeManager {
                             ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
                         </div>
                     ` : ''}
+                    ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                        <div class="recipe-meal-times">
+                            ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+                        </div>
+                    ` : ''}
                     ${recipe.source && recipe.source.url ? `
                         <div class="recipe-source">
                             <i class="fas fa-link"></i> 
@@ -154,6 +174,14 @@ class RecipeManager {
         const tagFilter = document.getElementById('tagFilter');
         tagFilter.innerHTML = '<option value="">All Tags</option>' + 
             this.tags.map(tag => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`).join('');
+    }
+
+    renderMealTimeFilter() {
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        const allMealTimes = ['breakfast', 'lunch', 'dinner', 'snack', 'brunch', 'dessert'];
+        mealTimeFilter.innerHTML = allMealTimes.map(mealTime => 
+            `<option value="${mealTime}">${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)}</option>`
+        ).join('');
     }
 
     showRecipeDetail(recipe) {
@@ -226,6 +254,15 @@ class RecipeManager {
                     <h3><i class="fas fa-tags"></i> Tags</h3>
                     <div class="detail-tags">
                         ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                <div class="detail-section">
+                    <h3><i class="fas fa-clock"></i> Meal Times</h3>
+                    <div class="detail-tags">
+                        ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
                     </div>
                 </div>
             ` : ''}
@@ -305,6 +342,7 @@ class RecipeManager {
                 this.closeModal();
                 this.loadRecipes();
                 this.loadTags();
+                this.loadMealTimes();
                 this.showSuccess(this.editingRecipe ? 'Recipe updated successfully!' : 'Recipe created successfully!');
             } else {
                 const error = await response.json();
@@ -330,6 +368,10 @@ class RecipeManager {
         // Tags
         const tagsStr = formData.get('tags');
         recipe.tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        
+        // Meal times
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox:checked');
+        recipe.meal_times = Array.from(mealTimeCheckboxes).map(checkbox => checkbox.value);
         
         // Source
         recipe.source = {
@@ -391,6 +433,12 @@ class RecipeManager {
         document.getElementById('servings').value = recipe.servings || '';
         document.getElementById('difficulty').value = recipe.difficulty || '';
         document.getElementById('tags').value = (recipe.tags || []).join(', ');
+        
+        // Meal times - check the appropriate checkboxes
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
+        mealTimeCheckboxes.forEach(checkbox => {
+            checkbox.checked = (recipe.meal_times || []).includes(checkbox.value);
+        });
         
         // Source
         document.getElementById('sourceType').value = recipe.source?.type || 'manual';
@@ -486,6 +534,12 @@ class RecipeManager {
         // Reset dynamic sections
         document.getElementById('ingredientsContainer').innerHTML = '';
         document.getElementById('instructionsContainer').innerHTML = '';
+        
+        // Reset meal time checkboxes
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
+        mealTimeCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
         
         this.addIngredientRow();
         this.addInstructionRow();

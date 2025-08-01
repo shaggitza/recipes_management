@@ -216,6 +216,18 @@ body {
     font-weight: 500;
 }
 
+.meal-time-tag {
+    background: #28a745;
+    color: white;
+}
+
+.recipe-meal-times {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+}
+
 .recipe-source {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -378,6 +390,44 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Meal times checkboxes */
+.meal-times-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    font-weight: normal;
+    margin-bottom: 0;
+}
+
+.checkbox-label:hover {
+    background-color: #f8f9fa;
+    border-color: #667eea;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.checkbox-label input[type="checkbox"]:checked + span,
+.checkbox-label:has(input[type="checkbox"]:checked) {
+    background-color: #667eea;
+    color: white;
+    border-color: #667eea;
 }
 
 .form-actions {

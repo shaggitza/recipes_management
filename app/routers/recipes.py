@@ -31,6 +31,7 @@ async def get_recipes(
     search: Optional[str] = Query(None, description="Search term for recipes"),
     tags: Optional[str] = Query(None, description="Comma-separated list of tags to filter by"),
     difficulty: Optional[str] = Query(None, pattern="^(easy|medium|hard)$", description="Difficulty level filter"),
+    meal_times: Optional[str] = Query(None, description="Comma-separated list of meal times to filter by"),
     service: RecipeService = Depends(get_recipe_service)
 ) -> List[RecipeResponse]:
     """Get recipes with optional filtering, searching, and pagination"""
@@ -39,7 +40,8 @@ async def get_recipes(
         limit=limit,
         search=search,
         tags=tags,
-        difficulty=difficulty
+        difficulty=difficulty,
+        meal_times=meal_times
     )
     
     # Convert using proper Recipe to RecipeResponse conversion
@@ -62,10 +64,11 @@ async def search_recipes(
 async def get_recipe_count(
     difficulty: Optional[str] = Query(None, pattern="^(easy|medium|hard)$"),
     tags: Optional[str] = Query(None, description="Comma-separated list of tags"),
+    meal_times: Optional[str] = Query(None, description="Comma-separated list of meal times"),
     service: RecipeService = Depends(get_recipe_service)
 ) -> JSONResponse:
     """Get count of recipes with optional filters"""
-    count = await service.get_recipe_count(difficulty=difficulty, tags=tags)
+    count = await service.get_recipe_count(difficulty=difficulty, tags=tags, meal_times=meal_times)
     return JSONResponse(content={"count": count})
 
 
@@ -85,6 +88,22 @@ async def get_all_tags_alternate(
     return await service.get_all_tags()
 
 
+@router.get("/meal-times", response_model=List[str])
+async def get_all_meal_times(
+    service: RecipeService = Depends(get_recipe_service)
+) -> List[str]:
+    """Get all unique meal times"""
+    return await service.get_all_meal_times()
+
+
+@router.get("/meal-times/all", response_model=List[str])
+async def get_all_meal_times_alternate(
+    service: RecipeService = Depends(get_recipe_service)
+) -> List[str]:
+    """Get all unique meal times (alternate endpoint for frontend compatibility)"""
+    return await service.get_all_meal_times()
+
+
 @router.get("/recent", response_model=List[RecipeResponse])
 async def get_recent_recipes(
     limit: int = Query(10, ge=1, le=50, description="Maximum number of recent recipes"),
@@ -102,6 +121,17 @@ async def get_recipes_by_difficulty(
 ) -> List[RecipeResponse]:
     """Get recipes filtered by difficulty level"""
     recipes = await service.get_recipes_by_difficulty(difficulty)
+    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
+
+
+@router.get("/meal-times/{meal_times}", response_model=List[RecipeResponse])
+async def get_recipes_by_meal_times(
+    meal_times: str,
+    service: RecipeService = Depends(get_recipe_service)
+) -> List[RecipeResponse]:
+    """Get recipes filtered by meal times (comma-separated)"""
+    meal_time_list = [mt.strip().lower() for mt in meal_times.split(",") if mt.strip()]
+    recipes = await service.get_recipes_by_meal_times(meal_time_list)
     return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 

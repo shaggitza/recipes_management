@@ -36,6 +36,7 @@ class Recipe(Document):
     # Classification
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
+    meal_times: List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]] = Field(default_factory=list, max_length=6)
     
     # Source and media
     source: Source = Field(default_factory=Source)
@@ -47,6 +48,19 @@ class Recipe(Document):
     
     # Extensibility
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator('meal_times')
+    @classmethod
+    def validate_meal_times(cls, v: List[str]) -> List[str]:
+        """Validate and normalize meal times"""
+        if not v:
+            return []
+        # Remove duplicates and ensure valid meal times
+        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
+        if len(normalized) > 6:
+            raise ValueError('Maximum 6 meal times allowed')
+        return normalized
 
     @field_validator('tags')
     @classmethod
@@ -91,6 +105,8 @@ class Recipe(Document):
             # Compound indexes for common queries
             IndexModel([("difficulty", 1), ("tags", 1)]),
             IndexModel([("created_at", -1), ("difficulty", 1)]),
+            IndexModel([("meal_times", 1)]),
+            IndexModel([("difficulty", 1), ("meal_times", 1)]),
         ]
 
 
@@ -107,9 +123,22 @@ class RecipeCreate(BaseModel):
     servings: Optional[int] = Field(None, ge=1, le=100)
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
+    meal_times: List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]] = Field(default_factory=list, max_length=6)
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list, max_length=10)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator('meal_times')
+    @classmethod
+    def validate_meal_times(cls, v: List[str]) -> List[str]:
+        """Validate and normalize meal times"""
+        if not v:
+            return []
+        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
+        if len(normalized) > 6:
+            raise ValueError('Maximum 6 meal times allowed')
+        return normalized
 
     @field_validator('tags')
     @classmethod
@@ -136,9 +165,24 @@ class RecipeUpdate(BaseModel):
     servings: Optional[int] = Field(None, ge=1, le=100)
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: Optional[List[str]] = Field(None, max_length=20)
+    meal_times: Optional[List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]]] = Field(None, max_length=6)
     source: Optional[Source] = None
     images: Optional[List[str]] = Field(None, max_length=10)
     metadata: Optional[Dict[str, Any]] = None
+
+    @field_validator('meal_times')
+    @classmethod
+    def validate_meal_times(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate and normalize meal times"""
+        if v is None:
+            return None
+        if not v:
+            return []
+        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
+        if len(normalized) > 6:
+            raise ValueError('Maximum 6 meal times allowed')
+        return normalized
 
     @field_validator('tags')
     @classmethod
@@ -168,6 +212,7 @@ class RecipeResponse(BaseModel):
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    meal_times: List[str] = Field(default_factory=list)
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list)
     created_at: datetime
