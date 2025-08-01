@@ -4,7 +4,7 @@ Tests the Pydantic models with proper validation logic.
 """
 import pytest
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import ValidationError
 
 from app.models.recipe import RecipeCreate, RecipeUpdate, RecipeResponse, Ingredient, Source
@@ -586,6 +586,62 @@ class TestRecipeResponseModel:
         assert response.id == object_id
         assert response.title == "Response Test Recipe"
         assert response.description == "Test recipe response"
+    
+    def test_recipe_response_from_recipe(self) -> None:
+        """Test RecipeResponse.from_recipe method with proper ObjectId conversion."""
+        from bson import ObjectId
+        
+        # Create a mock Recipe document with ObjectId
+        class MockRecipe:
+            def __init__(self):
+                self.id = ObjectId()
+                self.title = "Test Recipe"
+                self.description = "Test description"
+                self.ingredients = []
+                self.instructions = []
+                self.prep_time = 30
+                self.cook_time = 45
+                self.servings = 4
+                self.difficulty = "medium"
+                self.tags = ["test", "quick"]
+                self.source = {"type": "manual"}
+                self.images = []
+                self.created_at = datetime.now(timezone.utc)
+                self.updated_at = datetime.now(timezone.utc)
+                self.metadata = {}
+            
+            def model_dump(self):
+                return {
+                    "title": self.title,
+                    "description": self.description,
+                    "ingredients": self.ingredients,
+                    "instructions": self.instructions,
+                    "prep_time": self.prep_time,
+                    "cook_time": self.cook_time,
+                    "servings": self.servings,
+                    "difficulty": self.difficulty,
+                    "tags": self.tags,
+                    "source": self.source,
+                    "images": self.images,
+                    "created_at": self.created_at,
+                    "updated_at": self.updated_at,
+                    "metadata": self.metadata
+                }
+        
+        mock_recipe = MockRecipe()
+        
+        # Convert using the from_recipe method
+        response = RecipeResponse.from_recipe(mock_recipe)
+        
+        # Verify the ID is properly converted to string
+        assert response.id == str(mock_recipe.id)
+        assert isinstance(response.id, str)
+        assert response.title == mock_recipe.title
+        assert response.description == mock_recipe.description
+        assert response.prep_time == mock_recipe.prep_time
+        assert response.cook_time == mock_recipe.cook_time
+        assert response.difficulty == mock_recipe.difficulty
+        assert response.tags == mock_recipe.tags
 
 class TestRecipeModelValidation:
     """Test comprehensive recipe model validation."""

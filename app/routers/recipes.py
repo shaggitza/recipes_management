@@ -20,8 +20,8 @@ async def create_recipe(
 ) -> RecipeResponse:
     """Create a new recipe with proper validation"""
     created_recipe = await service.create_recipe(recipe)
-    # Use Beanie's built-in serialization with proper alias handling
-    return RecipeResponse.model_validate(created_recipe)
+    # Use proper Recipe to RecipeResponse conversion
+    return RecipeResponse.from_recipe(created_recipe)
 
 
 @router.get("/", response_model=List[RecipeResponse])
@@ -42,8 +42,8 @@ async def get_recipes(
         difficulty=difficulty
     )
     
-    # Convert using Beanie's proper serialization
-    return [RecipeResponse.model_validate(recipe) for recipe in recipes]
+    # Convert using proper Recipe to RecipeResponse conversion
+    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 
 @router.get("/search", response_model=List[RecipeResponse])
@@ -55,7 +55,7 @@ async def search_recipes(
 ) -> List[RecipeResponse]:
     """Search recipes by text query"""
     recipes = await service.search_recipes(query=q, skip=skip, limit=limit)
-    return [RecipeResponse.model_validate(recipe) for recipe in recipes]
+    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 
 @router.get("/count")
@@ -77,6 +77,14 @@ async def get_all_tags(
     return await service.get_all_tags()
 
 
+@router.get("/tags/all", response_model=List[str])
+async def get_all_tags_alternate(
+    service: RecipeService = Depends(get_recipe_service)
+) -> List[str]:
+    """Get all unique tags (alternate endpoint for frontend compatibility)"""
+    return await service.get_all_tags()
+
+
 @router.get("/recent", response_model=List[RecipeResponse])
 async def get_recent_recipes(
     limit: int = Query(10, ge=1, le=50, description="Maximum number of recent recipes"),
@@ -84,7 +92,7 @@ async def get_recent_recipes(
 ) -> List[RecipeResponse]:
     """Get recently created recipes"""
     recipes = await service.get_recent_recipes(limit=limit)
-    return [RecipeResponse.model_validate(recipe) for recipe in recipes]
+    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 
 @router.get("/difficulty/{difficulty}", response_model=List[RecipeResponse])
@@ -94,7 +102,7 @@ async def get_recipes_by_difficulty(
 ) -> List[RecipeResponse]:
     """Get recipes filtered by difficulty level"""
     recipes = await service.get_recipes_by_difficulty(difficulty)
-    return [RecipeResponse.model_validate(recipe) for recipe in recipes]
+    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 
 @router.get("/{recipe_id}", response_model=RecipeResponse)
@@ -104,7 +112,7 @@ async def get_recipe(
 ) -> RecipeResponse:
     """Get a specific recipe by ID"""
     recipe = await service.get_recipe_by_id(recipe_id)
-    return RecipeResponse.model_validate(recipe)
+    return RecipeResponse.from_recipe(recipe)
 
 
 @router.put("/{recipe_id}", response_model=RecipeResponse)
@@ -115,7 +123,7 @@ async def update_recipe(
 ) -> RecipeResponse:
     """Update a recipe with proper validation"""
     updated_recipe = await service.update_recipe(recipe_id, recipe_update)
-    return RecipeResponse.model_validate(updated_recipe)
+    return RecipeResponse.from_recipe(updated_recipe)
 
 
 @router.delete("/{recipe_id}")

@@ -156,9 +156,9 @@ class RecipeUpdate(BaseModel):
 
 class RecipeResponse(BaseModel):
     """Response model with proper ID serialization"""
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
     
-    id: str = Field(..., alias="_id")
+    id: str
     title: str
     description: Optional[str] = None
     ingredients: List[Ingredient] = Field(default_factory=list)
@@ -173,6 +173,13 @@ class RecipeResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    
+    @classmethod
+    def from_recipe(cls, recipe: "Recipe") -> "RecipeResponse":
+        """Create RecipeResponse from Recipe document with proper ID conversion"""
+        recipe_data = recipe.model_dump()
+        recipe_data["id"] = str(recipe.id)
+        return cls(**recipe_data)
     
     @property
     def total_time(self) -> Optional[int]:
