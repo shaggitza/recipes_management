@@ -1,45 +1,41 @@
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
+from beanie import PydanticObjectId
 
-from app.mock_database import get_database
-from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate, RecipeInDB
+from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate, RecipeResponse
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
 
-@router.post("/", response_model=Recipe)
-async def create_recipe(recipe: RecipeCreate):
+@router.post("/", response_model=RecipeResponse)
+async def create_recipe(recipe: RecipeCreate) -> RecipeResponse:
     """Create a new recipe"""
-    db = get_database()
+    # Create Recipe document from RecipeCreate data
+    recipe_doc = Recipe(**recipe.model_dump())
+    recipe_doc.created_at = datetime.utcnow()
+    recipe_doc.updated_at = datetime.utcnow()
     
-    # Convert to dict and add timestamps
-    recipe_dict = recipe.dict()
-    recipe_dict["created_at"] = datetime.utcnow()
-    recipe_dict["updated_at"] = datetime.utcnow()
+    # Save to database using Beanie
+    await recipe_doc.insert()
     
-    # Insert into database
-    result = await db.recipes.insert_one(recipe_dict)
-    
-    # Fetch the created recipe
-    created_recipe = await db.recipes.find_one({"_id": result.inserted_id})
-    return Recipe(**created_recipe)
+    # Convert to response model
+    return RecipeResponse(**recipe_doc.model_dump(by_alias=True))
 
-@router.get("/", response_model=List[Recipe])
+@router.get("/", response_model=List[RecipeResponse])
 async def get_recipes(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     search: Optional[str] = Query(None),
     tags: Optional[str] = Query(None),
     difficulty: Optional[str] = Query(None)
-):
+) -> List[RecipeResponse]:
     """Get recipes with optional filtering"""
-    db = get_database()
-    
-    # Build query
-    query = {}
+    # Build query conditions
+    find_query = {}
     
     if search:
-        query["$or"] = [
+        # Use MongoDB text search or regex
+        find_query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}},
             {"ingredients.name": {"$regex": search, "$options": "i"}}
@@ -47,82 +43,87 @@ async def get_recipes(
     
     if tags:
         tag_list = [tag.strip() for tag in tags.split(",")]
-        query["tags"] = {"$in": tag_list}
+        find_query["tags"] = {"$in": tag_list}
     
     if difficulty:
-        query["difficulty"] = difficulty
+        find_query["difficulty"] = difficulty
     
-    # Execute query
-    cursor = db.recipes.find(query).skip(skip).limit(limit).sort("created_at", -1)
-    recipes = await cursor.to_list(length=limit)
+    # Execute query with Beanie
+    recipes = await Recipe.find(find_query).skip(skip).limit(limit).sort(-Recipe.created_at).to_list()
     
-    return [Recipe(**recipe) for recipe in recipes]
+    return [RecipeResponse(**recipe.model_dump(by_alias=True)) for recipe in recipes]
 
-@router.get("/{recipe_id}", response_model=Recipe)
-async def get_recipe(recipe_id: str):
+@router.get("/{recipe_id}", response_model=RecipeResponse)
+async def get_recipe(recipe_id: str) -> RecipeResponse:
     """Get a specific recipe by ID"""
-    db = get_database()
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(recipe_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid recipe ID format")
     
-    recipe = await db.recipes.find_one({"_id": recipe_id})
+    recipe = await Recipe.get(object_id)
     
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    return Recipe(**recipe)
+    return RecipeResponse(**recipe.model_dump(by_alias=True))
 
-@router.put("/{recipe_id}", response_model=Recipe)
-async def update_recipe(recipe_id: str, recipe_update: RecipeUpdate):
+@router.put("/{recipe_id}", response_model=RecipeResponse)
+async def update_recipe(recipe_id: str, recipe_update: RecipeUpdate) -> RecipeResponse:
     """Update a recipe"""
-    db = get_database()
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(recipe_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid recipe ID format")
     
-    # Check if recipe exists
-    existing_recipe = await db.recipes.find_one({"_id": recipe_id})
-    if not existing_recipe:
+    recipe = await Recipe.get(object_id)
+    if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    # Prepare update data
-    update_data = recipe_update.dict(exclude_unset=True)
+    # Update fields that are provided
+    update_data = recipe_update.model_dump(exclude_unset=True)
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
         
-        # Update in database
-        await db.recipes.update_one(
-            {"_id": recipe_id},
-            {"$set": update_data}
-        )
+        # Update the recipe using Beanie's update method
+        await recipe.update({"$set": update_data})
+        
+        # Refresh the recipe to get updated data
+        await recipe.sync()
     
-    # Fetch updated recipe
-    updated_recipe = await db.recipes.find_one({"_id": recipe_id})
-    return Recipe(**updated_recipe)
+    return RecipeResponse(**recipe.model_dump(by_alias=True))
 
 @router.delete("/{recipe_id}")
-async def delete_recipe(recipe_id: str):
+async def delete_recipe(recipe_id: str) -> dict:
     """Delete a recipe"""
-    db = get_database()
+    try:
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(recipe_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid recipe ID format")
     
-    # Check if recipe exists
-    existing_recipe = await db.recipes.find_one({"_id": recipe_id})
-    if not existing_recipe:
+    recipe = await Recipe.get(object_id)
+    if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    # Delete recipe
-    await db.recipes.delete_one({"_id": recipe_id})
+    # Delete recipe using Beanie
+    await recipe.delete()
     
     return {"message": "Recipe deleted successfully"}
 
 @router.get("/tags/all", response_model=List[str])
-async def get_all_tags():
+async def get_all_tags() -> List[str]:
     """Get all unique tags"""
-    db = get_database()
-    
-    # Aggregate to get unique tags
+    # Use Beanie's aggregation pipeline
     pipeline = [
         {"$unwind": "$tags"},
         {"$group": {"_id": "$tags"}},
         {"$sort": {"_id": 1}}
     ]
     
-    cursor = db.recipes.aggregate(pipeline)
-    tags = [doc["_id"] async for doc in cursor if doc["_id"]]
+    result = await Recipe.aggregate(pipeline).to_list()
+    tags = [doc["_id"] for doc in result if doc.get("_id")]
     
     return tags

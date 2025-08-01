@@ -1,5 +1,5 @@
 import pytest
-from bson import ObjectId
+from beanie import PydanticObjectId
 
 def test_create_recipe(client, clean_db):
     """Test creating a new recipe."""
@@ -118,7 +118,7 @@ def test_get_recipe_by_invalid_id(client, clean_db):
 
 def test_get_recipe_not_found(client, clean_db):
     """Test getting a recipe that doesn't exist."""
-    fake_id = str(ObjectId())
+    fake_id = str(PydanticObjectId())
     response = client.get(f"/api/recipes/{fake_id}")
     assert response.status_code == 404
 
@@ -156,7 +156,7 @@ def test_update_recipe_partial(client, clean_db):
 
 def test_update_recipe_not_found(client, clean_db):
     """Test updating a recipe that doesn't exist."""
-    fake_id = str(ObjectId())
+    fake_id = str(PydanticObjectId())
     update_data = {"title": "Updated Title"}
     response = client.put(f"/api/recipes/{fake_id}", json=update_data)
     assert response.status_code == 404
@@ -179,7 +179,7 @@ def test_delete_recipe(client, clean_db):
 
 def test_delete_recipe_not_found(client, clean_db):
     """Test deleting a recipe that doesn't exist."""
-    fake_id = str(ObjectId())
+    fake_id = str(PydanticObjectId())
     response = client.delete(f"/api/recipes/{fake_id}")
     assert response.status_code == 404
 

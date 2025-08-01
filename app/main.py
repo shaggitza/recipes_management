@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 
 from app.config import settings
-from app.mock_database import connect_to_mongo, close_mongo_connection
+from app.database import connect_to_mongo, close_mongo_connection
 from app.routers import recipes
 
 @asynccontextmanager

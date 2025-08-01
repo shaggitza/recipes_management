@@ -17,7 +17,7 @@ from app.routers import recipes
 # Try to import MongoDB version first
 try:
     from app.mongodb_database import connect_to_mongo, close_mongo_connection
-    print("🔧 Using MongoDB database")
+    print("🔧 Using MongoDB database with Beanie ODM")
     DATABASE_TYPE = "mongodb"
 except ImportError:
     from app.mock_database import connect_to_mongo, close_mongo_connection
