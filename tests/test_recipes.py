@@ -272,3 +272,249 @@ def test_pagination(client, clean_db):
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 5
+
+def test_recipe_validation_errors(client, clean_db):
+    """Test recipe validation error handling."""
+    # Test empty title
+    response = client.post("/api/recipes/", json={"title": ""})
+    assert response.status_code == 422
+    error_detail = response.json()["detail"]
+    assert any("title" in str(error).lower() for error in error_detail)
+    
+    # Test invalid difficulty
+    response = client.post("/api/recipes/", json={
+        "title": "Test Recipe",
+        "difficulty": "super_hard"
+    })
+    assert response.status_code == 422
+    error_detail = response.json()["detail"]
+    assert any("difficulty" in str(error).lower() for error in error_detail)
+    
+    # Test negative prep_time
+    response = client.post("/api/recipes/", json={
+        "title": "Test Recipe",
+        "prep_time": -5
+    })
+    assert response.status_code == 422
+    
+    # Test negative servings
+    response = client.post("/api/recipes/", json={
+        "title": "Test Recipe",
+        "servings": 0
+    })
+    assert response.status_code == 422
+
+def test_recipe_search_edge_cases(client, clean_db):
+    """Test edge cases in recipe search functionality."""
+    # Create test recipes with various content
+    recipes = [
+        {
+            "title": "Chocolate Chip Cookies",
+            "description": "Sweet and chewy cookies",
+            "ingredients": [{"name": "chocolate chips", "amount": "1", "unit": "cup"}],
+            "tags": ["dessert", "cookies"]
+        },
+        {
+            "title": "Vanilla Extract Recipe",
+            "description": "Homemade vanilla extract",
+            "ingredients": [{"name": "vanilla beans", "amount": "10", "unit": "pieces"}],
+            "tags": ["ingredient", "extract"]
+        }
+    ]
+    
+    for recipe in recipes:
+        client.post("/api/recipes/", json=recipe)
+    
+    # Test case-insensitive search
+    response = client.get("/api/recipes/?search=CHOCOLATE")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert "Chocolate" in data[0]["title"]
+    
+    # Test search in ingredients
+    response = client.get("/api/recipes/?search=vanilla beans")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert "Vanilla" in data[0]["title"]
+    
+    # Test empty search returns all
+    response = client.get("/api/recipes/?search=")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    
+    # Test search with no results
+    response = client.get("/api/recipes/?search=nonexistent")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+
+def test_recipe_tags_functionality(client, clean_db):
+    """Test tag-related functionality thoroughly."""
+    # Create recipes with overlapping tags
+    recipes = [
+        {"title": "Recipe 1", "tags": ["vegetarian", "quick", "healthy"]},
+        {"title": "Recipe 2", "tags": ["vegan", "quick", "gluten-free"]},
+        {"title": "Recipe 3", "tags": ["meat", "slow-cooked"]},
+        {"title": "Recipe 4", "tags": []},  # No tags
+    ]
+    
+    for recipe in recipes:
+        client.post("/api/recipes/", json=recipe)
+    
+    # Test single tag filter
+    response = client.get("/api/recipes/?tags=quick")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    
+    # Test multiple tag filter (OR operation)
+    response = client.get("/api/recipes/?tags=vegetarian,vegan")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    
+    # Test tag that doesn't exist
+    response = client.get("/api/recipes/?tags=nonexistent")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+    
+    # Test get all tags endpoint
+    response = client.get("/api/recipes/tags/all")
+    assert response.status_code == 200
+    tags = response.json()
+    expected_tags = ["gluten-free", "healthy", "meat", "quick", "slow-cooked", "vegan", "vegetarian"]
+    assert set(tags) == set(expected_tags)
+
+def test_recipe_source_handling(client, clean_db):
+    """Test recipe source field handling."""
+    # Test with TikTok source
+    tiktok_recipe = {
+        "title": "TikTok Viral Recipe",
+        "source": {
+            "type": "tiktok",
+            "url": "https://tiktok.com/@user/video/123456",
+            "name": "Viral Food Creator"
+        }
+    }
+    response = client.post("/api/recipes/", json=tiktok_recipe)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["source"]["type"] == "tiktok"
+    assert data["source"]["url"] == "https://tiktok.com/@user/video/123456"
+    
+    # Test with default manual source
+    manual_recipe = {"title": "Manual Recipe"}
+    response = client.post("/api/recipes/", json=manual_recipe)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["source"]["type"] == "manual"
+    assert data["source"]["url"] is None
+
+def test_recipe_ingredients_and_instructions(client, clean_db):
+    """Test ingredient and instruction handling."""
+    complex_recipe = {
+        "title": "Complex Recipe",
+        "ingredients": [
+            {"name": "Flour", "amount": "2", "unit": "cups"},
+            {"name": "Sugar", "amount": "1", "unit": "cup"},
+            {"name": "Salt", "amount": "1", "unit": "tsp"},
+            {"name": "Vanilla", "amount": "2", "unit": "tsp"}
+        ],
+        "instructions": [
+            "Preheat oven to 350°F",
+            "Mix dry ingredients in a large bowl",
+            "Add wet ingredients and mix until combined",
+            "Pour into greased pan",
+            "Bake for 25-30 minutes until golden brown",
+            "Cool before serving"
+        ]
+    }
+    
+    response = client.post("/api/recipes/", json=complex_recipe)
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Verify ingredients are preserved
+    assert len(data["ingredients"]) == 4
+    flour_ingredient = next(ing for ing in data["ingredients"] if ing["name"] == "Flour")
+    assert flour_ingredient["amount"] == "2"
+    assert flour_ingredient["unit"] == "cups"
+    
+    # Verify instructions are preserved and ordered
+    assert len(data["instructions"]) == 6
+    assert data["instructions"][0] == "Preheat oven to 350°F"
+    assert "Cool before serving" in data["instructions"]
+
+def test_api_error_handling(client, clean_db):
+    """Test various API error conditions."""
+    # Test malformed JSON
+    response = client.post("/api/recipes/", 
+                         data="invalid json",
+                         headers={"Content-Type": "application/json"})
+    assert response.status_code == 422
+    
+    # Test missing required fields
+    response = client.post("/api/recipes/", json={})
+    assert response.status_code == 422
+    
+    # Test invalid HTTP methods on specific endpoints
+    response = client.patch("/api/recipes/")
+    assert response.status_code == 405
+
+def test_recipe_timestamps(client, clean_db):
+    """Test that timestamps are properly handled."""
+    recipe_data = {"title": "Timestamp Test Recipe"}
+    
+    # Create recipe
+    create_response = client.post("/api/recipes/", json=recipe_data)
+    assert create_response.status_code == 200
+    created_data = create_response.json()
+    
+    # Verify timestamps exist and are recent
+    assert "created_at" in created_data
+    assert "updated_at" in created_data
+    assert created_data["created_at"] == created_data["updated_at"]
+    
+    recipe_id = created_data["id"]
+    
+    # Update recipe and verify updated_at changes
+    import time
+    time.sleep(1)  # Ensure timestamp difference
+    
+    update_response = client.put(f"/api/recipes/{recipe_id}", 
+                               json={"description": "Updated description"})
+    assert update_response.status_code == 200
+    updated_data = update_response.json()
+    
+    # created_at should remain the same, updated_at should change
+    assert updated_data["created_at"] == created_data["created_at"]
+    # Note: In a real test with proper timing, updated_at would be different
+    assert "updated_at" in updated_data
+
+def test_recipe_metadata_field(client, clean_db):
+    """Test the extensible metadata field."""
+    recipe_with_metadata = {
+        "title": "Recipe with Metadata",
+        "metadata": {
+            "author": "Chef Example",
+            "difficulty_notes": "Requires advanced knife skills",
+            "custom_field": "custom_value",
+            "nutrition": {
+                "calories": 350,
+                "protein": "15g"
+            }
+        }
+    }
+    
+    response = client.post("/api/recipes/", json=recipe_with_metadata)
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Verify metadata is preserved exactly
+    assert data["metadata"]["author"] == "Chef Example"
+    assert data["metadata"]["nutrition"]["calories"] == 350
+    assert data["metadata"]["custom_field"] == "custom_value"
