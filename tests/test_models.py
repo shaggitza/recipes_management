@@ -1,16 +1,17 @@
 """
 Unit tests for the Recipe Management models and validation.
-Tests the Pydantic models and validation logic in isolation.
+Tests the Pydantic models with proper validation logic.
 """
 import pytest
 from typing import Dict, Any, List
 from datetime import datetime
 from pydantic import ValidationError
 
-from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate, RecipeResponse, Ingredient, Source
+from app.models.recipe import RecipeCreate, RecipeUpdate, RecipeResponse, Ingredient, Source
+
 
 class TestIngredientModel:
-    """Test the Ingredient model."""
+    """Test the Ingredient model with proper validation."""
     
     def test_ingredient_creation_valid(self) -> None:
         """Test creating a valid ingredient."""
@@ -26,8 +27,374 @@ class TestIngredientModel:
         assert ingredient.amount == "1"
         assert ingredient.unit is None
     
-    def test_ingredient_creation_with_none_unit(self) -> None:
-        """Test creating an ingredient with explicit None unit."""
+    def test_ingredient_validation_errors(self) -> None:
+        """Test ingredient validation errors."""
+        # Empty name
+        with pytest.raises(ValidationError):
+            Ingredient(name="", amount="1")
+        
+        # Empty amount
+        with pytest.raises(ValidationError):
+            Ingredient(name="Salt", amount="")
+        
+        # Name too long
+        with pytest.raises(ValidationError):
+            Ingredient(name="a" * 101, amount="1")
+        
+        # Amount too long
+        with pytest.raises(ValidationError):
+            Ingredient(name="Salt", amount="a" * 51)
+
+
+class TestSourceModel:
+    """Test the Source model with Literal types."""
+    
+    def test_source_creation_default(self) -> None:
+        """Test creating a default source."""
+        source = Source()
+        assert source.type == "manual"
+        assert source.url is None
+        assert source.name is None
+    
+    def test_source_creation_tiktok(self) -> None:
+        """Test creating a TikTok source."""
+        source = Source(
+            type="tiktok",
+            url="https://tiktok.com/@user/video/123",
+            name="TikTok Recipe"
+        )
+        assert source.type == "tiktok"
+        assert source.url == "https://tiktok.com/@user/video/123"
+        assert source.name == "TikTok Recipe"
+    
+    def test_source_validation_errors(self) -> None:
+        """Test source validation errors."""
+        # Invalid type
+        with pytest.raises(ValidationError):
+            Source(type="invalid_type")
+        
+        # URL too long
+        with pytest.raises(ValidationError):
+            Source(type="website", url="a" * 501)
+        
+        # Name too long
+        with pytest.raises(ValidationError):
+            Source(type="book", name="a" * 201)
+
+
+class TestRecipeCreateModel:
+    """Test the RecipeCreate model."""
+    
+    def test_recipe_create_minimal(self) -> None:
+        """Test creating RecipeCreate with minimal fields."""
+        recipe_data = RecipeCreate(title="Test Recipe")
+        assert recipe_data.title == "Test Recipe"
+        assert recipe_data.description is None
+        assert recipe_data.ingredients == []
+        assert recipe_data.instructions == []
+    
+    def test_recipe_create_full(self) -> None:
+        """Test creating RecipeCreate with all fields."""
+        ingredients = [Ingredient(name="Flour", amount="2", unit="cups")]
+        source = Source(type="website", url="https://example.com")
+        
+        recipe_data = RecipeCreate(
+            title="Full Recipe",
+            description="A complete recipe",
+            ingredients=ingredients,
+            instructions=["Mix ingredients"],
+            prep_time=15,
+            cook_time=30,
+            servings=4,
+            difficulty="easy",
+            tags=["quick", "easy"],
+            source=source,
+            images=["image.jpg"],
+            metadata={"notes": "test"}
+        )
+        
+        assert recipe_data.title == "Full Recipe"
+        assert len(recipe_data.ingredients) == 1
+        assert recipe_data.difficulty == "easy"
+        assert recipe_data.tags == ["quick", "easy"]
+    
+    def test_recipe_create_tag_normalization(self) -> None:
+        """Test tag normalization in RecipeCreate."""
+        recipe_data = RecipeCreate(
+            title="Test",
+            tags=["VEGETARIAN", "  quick  ", "vegetarian"]
+        )
+        assert set(recipe_data.tags) == {"vegetarian", "quick"}
+    
+    def test_recipe_create_validation_errors(self) -> None:
+        """Test RecipeCreate validation errors."""
+        # Empty title
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="")
+        
+        # Title too long
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="a" * 201)
+        
+        # Description too long
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", description="a" * 1001)
+        
+        # Invalid prep time
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", prep_time=-1)
+        
+        # Prep time too large
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", prep_time=1441)
+        
+        # Invalid servings
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", servings=0)
+        
+        # Too many servings
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", servings=101)
+        
+        # Invalid difficulty
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", difficulty="invalid")
+        
+        # Too many tags
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", tags=["tag"] * 21)
+        
+        # Too many images
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", images=["image.jpg"] * 11)
+    
+    def test_recipe_create_difficulty_validation(self) -> None:
+        """Test difficulty validation in RecipeCreate."""
+        # Valid difficulties
+        for difficulty in ["easy", "medium", "hard"]:
+            recipe = RecipeCreate(title="Test", difficulty=difficulty)
+            assert recipe.difficulty == difficulty
+        
+        # Invalid difficulty
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", difficulty="invalid")
+
+
+class TestRecipeUpdateModel:
+    """Test the RecipeUpdate model."""
+    
+    def test_recipe_update_empty(self) -> None:
+        """Test creating empty RecipeUpdate."""
+        recipe_update = RecipeUpdate()
+        assert recipe_update.title is None
+        assert recipe_update.description is None
+        assert recipe_update.ingredients is None
+    
+    def test_recipe_update_partial(self) -> None:
+        """Test creating partial RecipeUpdate."""
+        recipe_update = RecipeUpdate(
+            title="Updated Title",
+            difficulty="hard",
+            tags=["updated"]
+        )
+        assert recipe_update.title == "Updated Title"
+        assert recipe_update.difficulty == "hard"
+        assert recipe_update.tags == ["updated"]
+        assert recipe_update.description is None
+    
+    def test_recipe_update_multiple_fields(self) -> None:
+        """Test updating multiple fields."""
+        ingredients = [Ingredient(name="Updated Flour", amount="3", unit="cups")]
+        recipe_update = RecipeUpdate(
+            title="Updated Recipe",
+            ingredients=ingredients,
+            prep_time=20,
+            cook_time=40,
+            servings=6,
+            difficulty="medium"
+        )
+        
+        assert recipe_update.title == "Updated Recipe"
+        assert len(recipe_update.ingredients) == 1
+        assert recipe_update.prep_time == 20
+        assert recipe_update.cook_time == 40
+        assert recipe_update.servings == 6
+        assert recipe_update.difficulty == "medium"
+    
+    def test_recipe_update_tag_normalization(self) -> None:
+        """Test tag normalization in RecipeUpdate."""
+        recipe_update = RecipeUpdate(tags=["UPDATED", "  tag  "])
+        assert set(recipe_update.tags) == {"updated", "tag"}
+    
+    def test_recipe_update_validation(self) -> None:
+        """Test RecipeUpdate validation."""
+        # Valid update
+        update = RecipeUpdate(title="Valid Title", prep_time=30)
+        assert update.title == "Valid Title"
+        
+        # Invalid title length
+        with pytest.raises(ValidationError):
+            RecipeUpdate(title="a" * 201)
+        
+        # Invalid prep time
+        with pytest.raises(ValidationError):
+            RecipeUpdate(prep_time=-1)
+
+
+class TestRecipeResponseModel:
+    """Test the RecipeResponse model with proper ID handling."""
+    
+    def test_recipe_response_creation(self) -> None:
+        """Test creating RecipeResponse with proper field mapping."""
+        response_data = {
+            "_id": "507f1f77bcf86cd799439011",
+            "title": "Test Recipe",
+            "description": "Test description",
+            "ingredients": [{"name": "Flour", "amount": "1", "unit": "cup"}],
+            "instructions": ["Mix"],
+            "prep_time": 15,
+            "cook_time": 30,
+            "servings": 4,
+            "difficulty": "easy",
+            "tags": ["test"],
+            "source": {"type": "manual"},
+            "images": [],
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+            "metadata": {}
+        }
+        
+        response = RecipeResponse(**response_data)
+        assert response.id == "507f1f77bcf86cd799439011"
+        assert response.title == "Test Recipe"
+        assert response.difficulty == "easy"
+        assert response.total_time == 45
+
+
+class TestRecipeModelValidation:
+    """Test Recipe model validation with edge cases."""
+    
+    def test_title_length_validation(self) -> None:
+        """Test title length constraints."""
+        # Valid title
+        recipe = RecipeCreate(title="Valid Recipe Title")
+        assert recipe.title == "Valid Recipe Title"
+        
+        # Maximum length title
+        max_title = "a" * 200
+        recipe = RecipeCreate(title=max_title)
+        assert recipe.title == max_title
+        
+        # Title too long
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="a" * 201)
+    
+    def test_description_length_validation(self) -> None:
+        """Test description length constraints."""
+        # Valid description
+        recipe = RecipeCreate(title="Test", description="Valid description")
+        assert recipe.description == "Valid description"
+        
+        # Maximum length description
+        max_desc = "a" * 1000
+        recipe = RecipeCreate(title="Test", description=max_desc)
+        assert recipe.description == max_desc
+        
+        # Description too long
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", description="a" * 1001)
+    
+    def test_numeric_field_validation(self) -> None:
+        """Test numeric field constraints."""
+        # Valid numeric fields
+        recipe = RecipeCreate(
+            title="Test",
+            prep_time=30,
+            cook_time=60,
+            servings=4
+        )
+        assert recipe.prep_time == 30
+        assert recipe.cook_time == 60
+        assert recipe.servings == 4
+        
+        # Test maximum values (should now fail with our constraints)
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", prep_time=1441)  # > 1440 (24 hours)
+        
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", cook_time=1441)  # > 1440 (24 hours)
+        
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", servings=101)  # > 100
+    
+    def test_complex_ingredient_validation(self) -> None:
+        """Test complex ingredient scenarios."""
+        # Valid complex ingredients
+        ingredients = [
+            Ingredient(name="All-purpose flour", amount="2.5", unit="cups"),
+            Ingredient(name="Extra virgin olive oil", amount="1/4", unit="cup"),
+            Ingredient(name="Sea salt", amount="1", unit="pinch")
+        ]
+        
+        recipe = RecipeCreate(title="Test", ingredients=ingredients)
+        assert len(recipe.ingredients) == 3
+        assert recipe.ingredients[0].name == "All-purpose flour"
+        assert recipe.ingredients[1].amount == "1/4"
+        assert recipe.ingredients[2].unit == "pinch"
+    
+    def test_metadata_flexibility(self) -> None:
+        """Test metadata field flexibility."""
+        metadata = {
+            "nutrition": {"calories": 250, "protein": "12g"},
+            "source_notes": "Modified from original",
+            "rating": 4.5,
+            "custom_tags": ["family-favorite", "quick-prep"]
+        }
+        
+        recipe = RecipeCreate(title="Test", metadata=metadata)
+        assert recipe.metadata["nutrition"]["calories"] == 250
+        assert recipe.metadata["rating"] == 4.5
+        assert "family-favorite" in recipe.metadata["custom_tags"]
+
+
+class TestModelInteraction:
+    """Test interactions between different model types."""
+    
+    def test_create_to_response_conversion(self) -> None:
+        """Test converting RecipeCreate to RecipeResponse-like structure."""
+        create_data = RecipeCreate(
+            title="Conversion Test",
+            description="Testing model conversion",
+            ingredients=[Ingredient(name="Test", amount="1")],
+            instructions=["Test instruction"],
+            difficulty="easy",
+            tags=["test"]
+        )
+        
+        # Simulate what happens in the API
+        recipe_dict = create_data.model_dump()
+        recipe_dict["_id"] = "507f1f77bcf86cd799439011"
+        recipe_dict["created_at"] = datetime.now()
+        recipe_dict["updated_at"] = datetime.now()
+        
+        response = RecipeResponse(**recipe_dict)
+        assert response.id == "507f1f77bcf86cd799439011"
+        assert response.title == "Conversion Test"
+        assert response.difficulty == "easy"
+    
+    def test_update_model_exclusion(self) -> None:
+        """Test RecipeUpdate proper field exclusion."""
+        update_data = RecipeUpdate(title="Updated", description=None)
+        
+        # Test exclude_unset behavior
+        dumped = update_data.model_dump(exclude_unset=True)
+        assert "title" in dumped
+        assert "description" not in dumped  # None values excluded when exclude_unset=True
+        
+        # Test exclude_none behavior
+        dumped_none = update_data.model_dump(exclude_none=True)
+        assert "title" in dumped_none
+        assert "description" not in dumped_none
         ingredient = Ingredient(name="Pepper", amount="1", unit=None)
         assert ingredient.name == "Pepper"
         assert ingredient.amount == "1"
@@ -245,41 +612,52 @@ class TestRecipeModelValidation:
     
     def test_numeric_field_validation(self) -> None:
         """Test numeric field constraints."""
-        # Valid numeric values
+        # Valid numeric fields
         recipe = RecipeCreate(
             title="Test",
-            prep_time=0,  # Minimum valid value
-            cook_time=0,  # Minimum valid value
-            servings=1    # Minimum valid value
+            prep_time=30,
+            cook_time=60,
+            servings=4
         )
-        assert recipe.prep_time == 0
-        assert recipe.cook_time == 0
-        assert recipe.servings == 1
+        assert recipe.prep_time == 30
+        assert recipe.cook_time == 60
+        assert recipe.servings == 4
         
-        # Large valid values
-        recipe = RecipeCreate(
+        # Test maximum valid values
+        recipe_max = RecipeCreate(
             title="Test",
-            prep_time=9999,
-            cook_time=9999,
-            servings=9999
+            prep_time=1440,  # 24 hours max
+            cook_time=1440,  # 24 hours max
+            servings=100     # 100 servings max
         )
-        assert recipe.prep_time == 9999
+        assert recipe_max.prep_time == 1440
+        assert recipe_max.cook_time == 1440
+        assert recipe_max.servings == 100
+        
+        # Test values exceeding limits (should fail)
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", prep_time=1441)  # > 1440 (24 hours)
+        
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", cook_time=1441)  # > 1440 (24 hours)
+        
+        with pytest.raises(ValidationError):
+            RecipeCreate(title="Test", servings=101)  # > 100
     
     def test_complex_ingredient_validation(self) -> None:
         """Test complex ingredient scenarios."""
+        # Valid complex ingredients
         ingredients = [
-            {"name": "Flour", "amount": "2", "unit": "cups"},
-            {"name": "Eggs", "amount": "3", "unit": None},
-            {"name": "Salt", "amount": "1", "unit": "pinch"},
-            {"name": "Water", "amount": "as needed"}  # No unit specified
+            Ingredient(name="All-purpose flour", amount="2.5", unit="cups"),
+            Ingredient(name="Extra virgin olive oil", amount="1/4", unit="cup"),
+            Ingredient(name="Sea salt", amount="1", unit="pinch")
         ]
         
         recipe = RecipeCreate(title="Test", ingredients=ingredients)
-        assert len(recipe.ingredients) == 4
-        assert recipe.ingredients[0].unit == "cups"
-        assert recipe.ingredients[1].unit is None
+        assert len(recipe.ingredients) == 3
+        assert recipe.ingredients[0].name == "All-purpose flour"
+        assert recipe.ingredients[1].amount == "1/4"
         assert recipe.ingredients[2].unit == "pinch"
-        assert recipe.ingredients[3].unit is None
     
     def test_metadata_flexibility(self) -> None:
         """Test metadata field flexibility."""
