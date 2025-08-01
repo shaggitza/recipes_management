@@ -683,15 +683,59 @@ class RecipeManager {
             lightbox.innerHTML = `
                 <div class="lightbox-content">
                     <img id="lightboxImage" src="" alt="Recipe image" />
-                    <button class="lightbox-close" onclick="document.getElementById('imageLightbox').style.display='none'">&times;</button>
+                    <button class="lightbox-close">&times;</button>
                 </div>
             `;
             document.body.appendChild(lightbox);
+
+            // Add event listeners for closing
+            const closeBtn = lightbox.querySelector('.lightbox-close');
+            closeBtn.addEventListener('click', () => this.closeLightbox());
+
+            // Close on background click
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    this.closeLightbox();
+                }
+            });
+
+            // Prevent content click from closing
+            const content = lightbox.querySelector('.lightbox-content');
+            content.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
         }
 
         // Show the lightbox with the image
         document.getElementById('lightboxImage').src = imageUrl;
         lightbox.style.display = 'block';
+
+        // Add ESC key listener
+        this.addLightboxKeyListener();
+    }
+
+    closeLightbox() {
+        const lightbox = document.getElementById('imageLightbox');
+        if (lightbox) {
+            lightbox.style.display = 'none';
+        }
+        this.removeLightboxKeyListener();
+    }
+
+    addLightboxKeyListener() {
+        this.lightboxKeyHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeLightbox();
+            }
+        };
+        document.addEventListener('keydown', this.lightboxKeyHandler);
+    }
+
+    removeLightboxKeyListener() {
+        if (this.lightboxKeyHandler) {
+            document.removeEventListener('keydown', this.lightboxKeyHandler);
+            this.lightboxKeyHandler = null;
+        }
     }
 
     escapeHtml(text) {
