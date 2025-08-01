@@ -18,8 +18,10 @@ async def create_recipe(recipe: RecipeCreate) -> RecipeResponse:
     # Save to database using Beanie
     await recipe_doc.insert()
     
-    # Convert to response model
-    return RecipeResponse(**recipe_doc.model_dump(by_alias=True))
+    # Convert to response model - ensure ID is properly serialized
+    recipe_data = recipe_doc.model_dump()
+    recipe_data["id"] = str(recipe_doc.id)
+    return RecipeResponse(**recipe_data)
 
 @router.get("/", response_model=List[RecipeResponse])
 async def get_recipes(
@@ -51,7 +53,14 @@ async def get_recipes(
     # Execute query with Beanie
     recipes = await Recipe.find(find_query).skip(skip).limit(limit).sort(-Recipe.created_at).to_list()
     
-    return [RecipeResponse(**recipe.model_dump(by_alias=True)) for recipe in recipes]
+    # Convert to response models with proper ID serialization
+    response_recipes = []
+    for recipe in recipes:
+        recipe_data = recipe.model_dump()
+        recipe_data["id"] = str(recipe.id)
+        response_recipes.append(RecipeResponse(**recipe_data))
+    
+    return response_recipes
 
 @router.get("/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe(recipe_id: str) -> RecipeResponse:
@@ -67,7 +76,10 @@ async def get_recipe(recipe_id: str) -> RecipeResponse:
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
-    return RecipeResponse(**recipe.model_dump(by_alias=True))
+    # Convert to response model with proper ID serialization
+    recipe_data = recipe.model_dump()
+    recipe_data["id"] = str(recipe.id)
+    return RecipeResponse(**recipe_data)
 
 @router.put("/{recipe_id}", response_model=RecipeResponse)
 async def update_recipe(recipe_id: str, recipe_update: RecipeUpdate) -> RecipeResponse:
@@ -93,7 +105,10 @@ async def update_recipe(recipe_id: str, recipe_update: RecipeUpdate) -> RecipeRe
         # Refresh the recipe to get updated data
         await recipe.sync()
     
-    return RecipeResponse(**recipe.model_dump(by_alias=True))
+    # Convert to response model with proper ID serialization
+    recipe_data = recipe.model_dump()
+    recipe_data["id"] = str(recipe.id)
+    return RecipeResponse(**recipe_data)
 
 @router.delete("/{recipe_id}")
 async def delete_recipe(recipe_id: str) -> dict:
