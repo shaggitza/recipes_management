@@ -4,20 +4,17 @@ Tests the basic frontend functionality by simulating browser interactions.
 """
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
-
-client = TestClient(app)
 
 class TestUIBasicFunctionality:
     """Test basic UI functionality and API integration."""
     
-    def test_home_page_loads(self):
+    def test_home_page_loads(self, client):
         """Test that the home page loads successfully."""
         response = client.get("/")
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         
-    def test_static_files_served(self):
+    def test_static_files_served(self, client):
         """Test that static files are properly served."""
         # Test CSS file
         response = client.get("/static/css/style.css")
@@ -29,7 +26,7 @@ class TestUIBasicFunctionality:
         assert response.status_code == 200
         assert "javascript" in response.headers["content-type"]
         
-    def test_api_endpoints_for_ui(self):
+    def test_api_endpoints_for_ui(self, client, clean_db):
         """Test API endpoints that the UI depends on."""
         # Test getting all recipes (should work even if empty)
         response = client.get("/api/recipes/")
@@ -50,7 +47,7 @@ class TestUIBasicFunctionality:
 class TestRecipeCreationWorkflow:
     """Test the recipe creation workflow that the UI uses."""
     
-    def test_create_recipe_via_api(self):
+    def test_create_recipe_via_api(self, client, clean_db):
         """Test creating a recipe through the API that the UI would use."""
         recipe_data = {
             "title": "Test UI Recipe",
@@ -119,7 +116,7 @@ class TestUIFilteringAndSearch:
     """Test filtering and search functionality used by the UI."""
     
     @pytest.fixture(autouse=True)
-    def setup_test_recipes(self):
+    def setup_test_recipes(self, client, clean_db):
         """Create test recipes for filtering tests."""
         self.test_recipes = []
         
@@ -161,7 +158,7 @@ class TestUIFilteringAndSearch:
         for recipe in self.test_recipes:
             client.delete(f"/api/recipes/{recipe['id']}")
     
-    def test_filter_by_difficulty(self):
+    def test_filter_by_difficulty(self, client):
         """Test filtering recipes by difficulty level."""
         response = client.get("/api/recipes/?difficulty=easy")
         assert response.status_code == 200
@@ -170,7 +167,7 @@ class TestUIFilteringAndSearch:
         for recipe in recipes:
             assert recipe["difficulty"] == "easy"
     
-    def test_search_recipes(self):
+    def test_search_recipes(self, client):
         """Test recipe search functionality."""
         response = client.get("/api/recipes/search?q=pasta")
         assert response.status_code == 200
@@ -180,7 +177,7 @@ class TestUIFilteringAndSearch:
         pasta_found = any("pasta" in recipe["title"].lower() for recipe in recipes)
         assert pasta_found
     
-    def test_get_recipes_by_difficulty_endpoint(self):
+    def test_get_recipes_by_difficulty_endpoint(self, client):
         """Test the specific difficulty endpoint."""
         response = client.get("/api/recipes/difficulty/hard")
         assert response.status_code == 200
@@ -189,7 +186,7 @@ class TestUIFilteringAndSearch:
         for recipe in recipes:
             assert recipe["difficulty"] == "hard"
     
-    def test_pagination(self):
+    def test_pagination(self, client):
         """Test recipe pagination."""
         # Test with limit
         response = client.get("/api/recipes/?limit=2")
@@ -206,7 +203,7 @@ class TestUIFilteringAndSearch:
 class TestUIErrorHandling:
     """Test error handling scenarios that the UI needs to handle."""
     
-    def test_invalid_recipe_creation(self):
+    def test_invalid_recipe_creation(self, client, clean_db):
         """Test creating invalid recipes."""
         # Empty title should fail
         invalid_data = {
@@ -227,7 +224,7 @@ class TestUIErrorHandling:
         response = client.post("/api/recipes/", json=invalid_data)
         assert response.status_code == 422
     
-    def test_nonexistent_recipe_access(self):
+    def test_nonexistent_recipe_access(self, client, clean_db):
         """Test accessing non-existent recipes."""
         fake_id = "507f1f77bcf86cd799439011"  # Valid ObjectId format
         
@@ -240,7 +237,7 @@ class TestUIErrorHandling:
         response = client.delete(f"/api/recipes/{fake_id}")
         assert response.status_code == 404
     
-    def test_invalid_recipe_id_format(self):
+    def test_invalid_recipe_id_format(self, client):
         """Test invalid recipe ID formats."""
         invalid_id = "invalid_id_format"
         

@@ -27,7 +27,7 @@ def test_create_recipe(client, clean_db):
     }
     
     response = client.post("/api/recipes/", json=recipe_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
     
     data = response.json()
     assert data["title"] == recipe_data["title"]
@@ -51,7 +51,7 @@ def test_create_recipe_minimal_data(client, clean_db):
     }
     
     response = client.post("/api/recipes/", json=recipe_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
     
     data = response.json()
     assert data["title"] == "Minimal Recipe"
