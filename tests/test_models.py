@@ -196,8 +196,9 @@ class TestRecipeResponseModel:
         """Test creating a RecipeResponse."""
         from bson import ObjectId
         
+        object_id = str(ObjectId())
         response_data = {
-            "_id": str(ObjectId()),
+            "id": object_id,
             "title": "Response Test Recipe",
             "description": "Test recipe response",
             "ingredients": [],
@@ -215,7 +216,7 @@ class TestRecipeResponseModel:
         }
         
         response = RecipeResponse(**response_data)
-        assert response.id == response_data["_id"]
+        assert response.id == object_id
         assert response.title == "Response Test Recipe"
         assert response.description == "Test recipe response"
 
@@ -330,7 +331,7 @@ class TestModelInteraction:
         
         # Simulate what would happen in the API
         recipe_dict = recipe_create.model_dump()
-        recipe_dict["_id"] = str(ObjectId())
+        recipe_dict["id"] = str(ObjectId())
         recipe_dict["created_at"] = datetime.utcnow()
         recipe_dict["updated_at"] = datetime.utcnow()
         

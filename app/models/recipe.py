@@ -90,7 +90,7 @@ class RecipeUpdate(BaseModel):
 
 # Response model that includes the ID from Beanie
 class RecipeResponse(BaseModel):
-    id: str = Field(alias="_id")
+    id: str
     title: str
     description: Optional[str] = None
     ingredients: List[Ingredient] = Field(default_factory=list)
@@ -105,6 +105,3 @@ class RecipeResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     metadata: Dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        populate_by_name = True

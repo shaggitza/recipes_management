@@ -19,7 +19,7 @@ async def create_recipe(recipe: RecipeCreate) -> RecipeResponse:
     await recipe_doc.insert()
     
     # Convert to response model - ensure ID is properly serialized
-    recipe_data = recipe_doc.model_dump()
+    recipe_data = recipe_doc.model_dump(exclude={"id"})
     recipe_data["id"] = str(recipe_doc.id)
     return RecipeResponse(**recipe_data)
 
@@ -56,7 +56,7 @@ async def get_recipes(
     # Convert to response models with proper ID serialization
     response_recipes = []
     for recipe in recipes:
-        recipe_data = recipe.model_dump()
+        recipe_data = recipe.model_dump(exclude={"id"})
         recipe_data["id"] = str(recipe.id)
         response_recipes.append(RecipeResponse(**recipe_data))
     
@@ -77,7 +77,7 @@ async def get_recipe(recipe_id: str) -> RecipeResponse:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
     # Convert to response model with proper ID serialization
-    recipe_data = recipe.model_dump()
+    recipe_data = recipe.model_dump(exclude={"id"})
     recipe_data["id"] = str(recipe.id)
     return RecipeResponse(**recipe_data)
 
@@ -106,7 +106,7 @@ async def update_recipe(recipe_id: str, recipe_update: RecipeUpdate) -> RecipeRe
         await recipe.sync()
     
     # Convert to response model with proper ID serialization
-    recipe_data = recipe.model_dump()
+    recipe_data = recipe.model_dump(exclude={"id"})
     recipe_data["id"] = str(recipe.id)
     return RecipeResponse(**recipe_data)
 
