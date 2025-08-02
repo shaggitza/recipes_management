@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Recipe Manager">
     <title>Recipe Management</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -19,25 +23,31 @@
                 <i class="fas fa-plus"></i> Add Recipe
             </button>
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search recipes..." class="search-input">
+                <input type="text" id="searchInput" placeholder="Search recipes..." class="search-input" 
+                       autocomplete="off" autocapitalize="words" spellcheck="false">
                 <button id="searchBtn" class="btn btn-secondary">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
             <div class="filter-container">
-                <select id="difficultyFilter" class="filter-select">
-                    <option value="">All Difficulties</option>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-                <select id="tagFilter" class="filter-select">
-                    <option value="">All Tags</option>
-                </select>
-                <select id="mealTimeFilter" class="filter-select" multiple>
-                    <!-- Meal time options will be populated by JavaScript -->
-                </select>
-                <button id="clearFiltersBtn" class="btn btn-danger">Clear Filters</button>
+                <button id="filterToggle" class="filter-toggle" style="display: none;">
+                    <i class="fas fa-filter"></i> Filters
+                </button>
+                <div id="filterContent" class="filter-content">
+                    <select id="difficultyFilter" class="filter-select">
+                        <option value="">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                    <select id="tagFilter" class="filter-select">
+                        <option value="">All Tags</option>
+                    </select>
+                    <select id="mealTimeFilter" class="filter-select" multiple>
+                        <!-- Meal time options will be populated by JavaScript -->
+                    </select>
+                    <button id="clearFiltersBtn" class="btn btn-danger">Clear Filters</button>
+                </div>
             </div>
         </nav>
 
@@ -68,26 +78,31 @@
             <form id="recipeForm" class="recipe-form">
                 <div class="form-group">
                     <label for="title">Recipe Title *</label>
-                    <input type="text" id="title" name="title" required>
+                    <input type="text" id="title" name="title" required 
+                           autocomplete="off" autocapitalize="words" spellcheck="true">
                 </div>
 
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <textarea id="description" name="description" rows="3"></textarea>
+                    <textarea id="description" name="description" rows="3" 
+                              autocapitalize="sentences" spellcheck="true"></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="prepTime">Prep Time (minutes)</label>
-                        <input type="number" id="prepTime" name="prep_time" min="0">
+                        <input type="number" id="prepTime" name="prep_time" min="0" 
+                               inputmode="numeric" pattern="[0-9]*">
                     </div>
                     <div class="form-group">
                         <label for="cookTime">Cook Time (minutes)</label>
-                        <input type="number" id="cookTime" name="cook_time" min="0">
+                        <input type="number" id="cookTime" name="cook_time" min="0" 
+                               inputmode="numeric" pattern="[0-9]*">
                     </div>
                     <div class="form-group">
                         <label for="servings">Servings</label>
-                        <input type="number" id="servings" name="servings" min="1">
+                        <input type="number" id="servings" name="servings" min="1" 
+                               inputmode="numeric" pattern="[0-9]*">
                     </div>
                     <div class="form-group">
                         <label for="difficulty">Difficulty</label>
@@ -102,7 +117,8 @@
 
                 <div class="form-group">
                     <label for="tags">Tags (comma-separated)</label>
-                    <input type="text" id="tags" name="tags" placeholder="e.g., vegetarian, quick, dinner">
+                    <input type="text" id="tags" name="tags" placeholder="e.g., vegetarian, quick, dinner" 
+                           autocomplete="off" autocapitalize="words" spellcheck="false">
                 </div>
 
                 <div class="form-group">
@@ -145,8 +161,10 @@
                             <option value="book">Book</option>
                             <option value="other">Other</option>
                         </select>
-                        <input type="url" id="sourceUrl" name="source_url" placeholder="Source URL (optional)">
-                        <input type="text" id="sourceName" name="source_name" placeholder="Source name (optional)">
+                        <input type="url" id="sourceUrl" name="source_url" placeholder="Source URL (optional)" 
+                               autocomplete="url" spellcheck="false">
+                        <input type="text" id="sourceName" name="source_name" placeholder="Source name (optional)" 
+                               autocomplete="off" autocapitalize="words" spellcheck="true">
                     </div>
                 </div>
 

@@ -14,6 +14,82 @@ class RecipeManager {
         this.loadRecipes();
         this.loadTags();
         this.loadMealTimes();
+        this.initMobileFeatures();
+    }
+
+    initMobileFeatures() {
+        // Mobile filter toggle
+        this.setupMobileFilters();
+        
+        // Mobile touch enhancements
+        this.setupTouchEnhancements();
+        
+        // Check if we're on mobile and show/hide appropriate elements
+        this.checkMobileView();
+    }
+    
+    setupMobileFilters() {
+        const filterToggle = document.getElementById('filterToggle');
+        const filterContent = document.getElementById('filterContent');
+        
+        if (filterToggle && filterContent) {
+            filterToggle.addEventListener('click', () => {
+                const isExpanded = filterContent.classList.contains('expanded');
+                filterContent.classList.toggle('expanded');
+                filterToggle.classList.toggle('active');
+                
+                // Update button text
+                const icon = filterToggle.querySelector('i');
+                if (isExpanded) {
+                    icon.className = 'fas fa-filter';
+                } else {
+                    icon.className = 'fas fa-filter-circle-xmark';
+                }
+            });
+        }
+    }
+    
+    setupTouchEnhancements() {
+        // Add haptic feedback simulation for recipe cards (if supported)
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.recipe-card')) {
+                // Vibrate if supported (very subtle)
+                if (navigator.vibrate) {
+                    navigator.vibrate(10);
+                }
+            }
+        });
+        
+        // Improve scroll behavior for modals on mobile
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+            });
+        });
+    }
+    
+    checkMobileView() {
+        const isMobile = window.innerWidth <= 768;
+        const filterToggle = document.getElementById('filterToggle');
+        const filterContent = document.getElementById('filterContent');
+        
+        if (filterToggle && filterContent) {
+            if (isMobile) {
+                filterToggle.style.display = 'block';
+                filterContent.classList.remove('expanded');
+                filterToggle.classList.remove('active');
+            } else {
+                filterToggle.style.display = 'none';
+                filterContent.classList.add('expanded');
+                filterContent.style.display = 'grid';
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.checkMobileView();
+        });
     }
 
     bindEvents() {
@@ -45,6 +121,7 @@ class RecipeManager {
         safeAddEventListener('tagFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('mealTimeFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('clearFiltersBtn', 'click', () => this.clearFilters());
+        safeAddEventListener('filterToggle', 'click', () => this.toggleMobileFilters());
 
 
         // Dynamic form elements
@@ -257,6 +334,25 @@ class RecipeManager {
             ).join('');
         } else {
             console.warn('mealTimeFilter element not found. Cannot render meal time filter options.');
+        }
+    }
+
+    toggleMobileFilters() {
+        const filterContent = document.getElementById('filterContent');
+        const filterToggle = document.getElementById('filterToggle');
+        
+        if (filterContent && filterToggle) {
+            const isExpanded = filterContent.classList.contains('expanded');
+            filterContent.classList.toggle('expanded');
+            filterToggle.classList.toggle('active');
+            
+            // Update button text and icon
+            const icon = filterToggle.querySelector('i');
+            if (isExpanded) {
+                filterToggle.innerHTML = '<i class="fas fa-filter"></i> Filters';
+            } else {
+                filterToggle.innerHTML = '<i class="fas fa-times"></i> Hide Filters';
+            }
         }
     }
 
@@ -642,9 +738,12 @@ class RecipeManager {
         const row = document.createElement('div');
         row.className = 'ingredient-row';
         row.innerHTML = `
-            <input type="text" placeholder="Ingredient name" class="ingredient-name" value="${ingredient?.name || ''}">
-            <input type="text" placeholder="Amount" class="ingredient-amount" value="${ingredient?.amount || ''}">
-            <input type="text" placeholder="Unit (optional)" class="ingredient-unit" value="${ingredient?.unit || ''}">
+            <input type="text" placeholder="Ingredient name" class="ingredient-name" value="${ingredient?.name || ''}" 
+                   autocomplete="off" autocapitalize="words" spellcheck="true">
+            <input type="text" placeholder="Amount" class="ingredient-amount" value="${ingredient?.amount || ''}" 
+                   autocomplete="off" spellcheck="false">
+            <input type="text" placeholder="Unit (optional)" class="ingredient-unit" value="${ingredient?.unit || ''}" 
+                   autocomplete="off" spellcheck="false">
             <button type="button" class="btn btn-danger remove-ingredient">
                 <i class="fas fa-trash"></i>
             </button>
@@ -664,7 +763,8 @@ class RecipeManager {
         const row = document.createElement('div');
         row.className = 'instruction-row';
         row.innerHTML = `
-            <textarea placeholder="Step ${container.children.length + 1}" class="instruction-text" rows="2">${instruction || ''}</textarea>
+            <textarea placeholder="Step ${container.children.length + 1}" class="instruction-text" rows="2" 
+                      autocapitalize="sentences" spellcheck="true">${instruction || ''}</textarea>
             <button type="button" class="btn btn-danger remove-instruction">
                 <i class="fas fa-trash"></i>
             </button>
