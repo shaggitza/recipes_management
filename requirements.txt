@@ -14,7 +14,7 @@ python-dotenv==1.0.0
 beautifulsoup4==4.13.4
 requests==2.31.0
 playwright==1.54.0
-langfun==0.2.3
+langfun
 openai==1.51.2
 
 # Testing
