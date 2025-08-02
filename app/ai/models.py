@@ -22,6 +22,17 @@ class ExtractedImage(pg.Object):
     is_primary: bool = False
 
 
+class ScrapedData(pg.Object):
+    """Scraped web page data for recipe extraction."""
+
+    url: str
+    html_content: str
+    title: Optional[str] = None
+    status_code: int = 200
+    images: List[ExtractedImage] = []
+    metadata: Optional[dict] = None
+
+
 class RecipeExtraction(pg.Object):
     """Simplified recipe extraction model using pyglove."""
 
