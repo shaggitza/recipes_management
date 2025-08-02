@@ -10,7 +10,7 @@ from app.repositories.recipe_repository import RecipeRepository
 from .scraper import RecipeScraper
 from .extractor import RecipeExtractor
 from .transformer import RecipeTransformer
-from .models import RecipeExtractionResult
+from .bridge import RecipeExtractionResult
 
 logger = logging.getLogger(__name__)
 

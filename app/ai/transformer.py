@@ -1,11 +1,10 @@
 """Data transformation module to convert AI-extracted data to Recipe models."""
 
 import logging
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime, timezone
 
 from app.models.recipe import RecipeCreate, Ingredient, Source
-from .models import ExtractedRecipe, ExtractedIngredient
 
 logger = logging.getLogger(__name__)
 
@@ -17,53 +16,71 @@ class RecipeTransformer:
         """Initialize the transformer."""
         pass
 
-    def transform_to_recipe_create(self, extracted_recipe: ExtractedRecipe) -> RecipeCreate:
+    def transform_to_recipe_create(self, extracted_recipe) -> RecipeCreate:
         """
-        Transform ExtractedRecipe to RecipeCreate model.
-        
+        Transform extracted recipe data to RecipeCreate model.
+
         Args:
-            extracted_recipe: AI-extracted recipe data
-            
+            extracted_recipe: AI-extracted recipe data (dict or RecipeExtraction object)
+
         Returns:
             RecipeCreate model ready for database insertion
         """
         try:
-            logger.info(f"Transforming extracted recipe: {extracted_recipe.title}")
+            # Convert dict to object-like access if needed
+            if isinstance(extracted_recipe, dict):
+                recipe_data = extracted_recipe
+            else:
+                # Assume it's a RecipeExtraction object
+                recipe_data = {
+                    "title": extracted_recipe.title,
+                    "description": extracted_recipe.description,
+                    "ingredients": extracted_recipe.ingredients,
+                    "instructions": extracted_recipe.instructions,
+                    "prep_time": extracted_recipe.prep_time,
+                    "cook_time": extracted_recipe.cook_time,
+                    "servings": extracted_recipe.servings,
+                    "difficulty": extracted_recipe.difficulty,
+                    "tags": extracted_recipe.tags,
+                    "source_url": getattr(extracted_recipe, "source_url", None),
+                }
+
+            logger.info(f"Transforming extracted recipe: {recipe_data['title']}")
             
             # Transform ingredients
-            ingredients = self._transform_ingredients(extracted_recipe.ingredients)
+            ingredients = self._transform_ingredients(recipe_data["ingredients"])
             
             # Transform instructions
-            instructions = self._transform_instructions(extracted_recipe.instructions)
+            instructions = self._transform_instructions(recipe_data["instructions"])
             
             # Create source information
             source = Source(
                 type="website",
-                url=extracted_recipe.source_url,
-                name=self._extract_domain_name(extracted_recipe.source_url)
+                url=recipe_data.get("source_url"),
+                name=self._extract_domain_name(recipe_data.get("source_url")),
             )
             
             # Transform difficulty
-            difficulty = self._normalize_difficulty(extracted_recipe.difficulty)
+            difficulty = self._normalize_difficulty(recipe_data.get("difficulty"))
             
             # Create the RecipeCreate object
             recipe_create = RecipeCreate(
-                title=self._clean_title(extracted_recipe.title),
-                description=self._clean_description(extracted_recipe.description),
+                title=self._clean_title(recipe_data["title"]),
+                description=self._clean_description(recipe_data.get("description")),
                 ingredients=ingredients,
                 instructions=instructions,
-                prep_time=extracted_recipe.prep_time,
-                cook_time=extracted_recipe.cook_time,
-                servings=extracted_recipe.servings,
+                prep_time=recipe_data.get("prep_time"),
+                cook_time=recipe_data.get("cook_time"),
+                servings=recipe_data.get("servings"),
                 difficulty=difficulty,
-                tags=self._clean_tags(extracted_recipe.tags),
+                tags=self._clean_tags(recipe_data.get("tags", [])),
                 source=source,
                 images=[],  # No images extracted yet
                 metadata={
                     "ai_extracted": True,
                     "extraction_timestamp": datetime.now(timezone.utc).isoformat(),
-                    "original_source": extracted_recipe.source_url
-                }
+                    "original_source": recipe_data.get("source_url"),
+                },
             )
             
             logger.info(f"Successfully transformed recipe: {recipe_create.title}")
@@ -73,20 +90,36 @@ class RecipeTransformer:
             logger.error(f"Error transforming recipe: {e}")
             raise ValueError(f"Failed to transform extracted recipe: {str(e)}")
 
-    def _transform_ingredients(self, extracted_ingredients: list[ExtractedIngredient]) -> list[Ingredient]:
+    def _transform_ingredients(self, extracted_ingredients) -> list[Ingredient]:
         """Transform extracted ingredients to Ingredient models."""
         ingredients = []
-        
-        for ext_ingredient in extracted_ingredients:
+
+        for ext_ingredient in extracted_ingredients or []:
             try:
+                # Handle both dict and object formats
+                if isinstance(ext_ingredient, dict):
+                    name = ext_ingredient.get("name", "")
+                    amount = ext_ingredient.get("amount", "")
+                    unit = ext_ingredient.get("unit")
+                else:
+                    # Assume it's an ExtractedIngredient object
+                    name = ext_ingredient.name
+                    amount = ext_ingredient.amount
+                    unit = ext_ingredient.unit
+
                 ingredient = Ingredient(
-                    name=self._clean_ingredient_name(ext_ingredient.name),
-                    amount=self._clean_amount(ext_ingredient.amount),
-                    unit=self._clean_unit(ext_ingredient.unit)
+                    name=self._clean_ingredient_name(name),
+                    amount=self._clean_amount(amount),
+                    unit=self._clean_unit(unit),
                 )
                 ingredients.append(ingredient)
             except Exception as e:
-                logger.warning(f"Skipping invalid ingredient {ext_ingredient.name}: {e}")
+                ingredient_name = (
+                    ext_ingredient.get("name", "unknown")
+                    if isinstance(ext_ingredient, dict)
+                    else getattr(ext_ingredient, "name", "unknown")
+                )
+                logger.warning(f"Skipping invalid ingredient {ingredient_name}: {e}")
                 continue
         
         return ingredients
@@ -197,7 +230,9 @@ class RecipeTransformer:
         
         return instruction
 
-    def _normalize_difficulty(self, difficulty: Optional[str]) -> Optional[str]:
+    def _normalize_difficulty(
+        self, difficulty: Optional[str]
+    ) -> Optional[Literal["easy", "medium", "hard"]]:
         """Normalize difficulty to valid values."""
         if not difficulty:
             return None
