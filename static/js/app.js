@@ -16,33 +16,43 @@ class RecipeManager {
     }
 
     bindEvents() {
+        // Helper function to safely add event listeners
+        const safeAddEventListener = (elementId, event, handler) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener(event, handler);
+            } else {
+                console.warn(`Element with ID '${elementId}' not found. Skipping event binding.`);
+            }
+        };
+
         // Modal controls
-        document.getElementById('addRecipeBtn').addEventListener('click', () => this.showAddModal());
-        document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
-        document.getElementById('closeDetailModal').addEventListener('click', () => this.closeDetailModal());
-        document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
+        safeAddEventListener('addRecipeBtn', 'click', () => this.showAddModal());
+        safeAddEventListener('closeModal', 'click', () => this.closeModal());
+        safeAddEventListener('closeDetailModal', 'click', () => this.closeDetailModal());
+        safeAddEventListener('cancelBtn', 'click', () => this.closeModal());
 
         // Form submission
-        document.getElementById('recipeForm').addEventListener('submit', (e) => this.handleSubmit(e));
+        safeAddEventListener('recipeForm', 'submit', (e) => this.handleSubmit(e));
 
         // Search and filters
-        document.getElementById('searchBtn').addEventListener('click', () => this.searchRecipes());
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        safeAddEventListener('searchBtn', 'click', () => this.searchRecipes());
+        safeAddEventListener('searchInput', 'keypress', (e) => {
             if (e.key === 'Enter') this.searchRecipes();
         });
-        document.getElementById('difficultyFilter').addEventListener('change', () => this.searchRecipes());
-        document.getElementById('tagFilter').addEventListener('change', () => this.searchRecipes());
+        safeAddEventListener('difficultyFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('tagFilter', 'change', () => this.searchRecipes());
 
         // Dynamic form elements
-        document.getElementById('addIngredient').addEventListener('click', () => this.addIngredientRow());
-        document.getElementById('addInstruction').addEventListener('click', () => this.addInstructionRow());
+        safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
+        safeAddEventListener('addInstruction', 'click', () => this.addInstructionRow());
 
         // Recipe detail actions
-        document.getElementById('editRecipeBtn').addEventListener('click', () => this.editCurrentRecipe());
-        document.getElementById('deleteRecipeBtn').addEventListener('click', () => this.deleteCurrentRecipe());
+        safeAddEventListener('editRecipeBtn', 'click', () => this.editCurrentRecipe());
+        safeAddEventListener('deleteRecipeBtn', 'click', () => this.deleteCurrentRecipe());
 
         // Image upload
-        document.getElementById('imageUpload').addEventListener('change', (e) => this.handleImageUpload(e));
+        safeAddEventListener('imageUpload', 'change', (e) => this.handleImageUpload(e));
 
         // Close modals on outside click
         window.addEventListener('click', (e) => {
@@ -81,9 +91,13 @@ class RecipeManager {
         try {
             this.showLoading(true);
             
-            const search = document.getElementById('searchInput').value;
-            const difficulty = document.getElementById('difficultyFilter').value;
-            const tag = document.getElementById('tagFilter').value;
+            const searchElement = document.getElementById('searchInput');
+            const difficultyElement = document.getElementById('difficultyFilter');
+            const tagElement = document.getElementById('tagFilter');
+            
+            const search = searchElement ? searchElement.value : '';
+            const difficulty = difficultyElement ? difficultyElement.value : '';
+            const tag = tagElement ? tagElement.value : '';
             
             const params = new URLSearchParams();
             if (search) params.append('search', search);
@@ -105,13 +119,22 @@ class RecipeManager {
         const container = document.getElementById('recipesContainer');
         const noResults = document.getElementById('noResults');
         
-        if (this.recipes.length === 0) {
-            container.innerHTML = '';
-            noResults.style.display = 'block';
+        if (!container) {
+            console.warn('recipesContainer element not found. Cannot render recipes.');
             return;
         }
         
-        noResults.style.display = 'none';
+        if (this.recipes.length === 0) {
+            container.innerHTML = '';
+            if (noResults) {
+                noResults.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (noResults) {
+            noResults.style.display = 'none';
+        }
         container.innerHTML = this.recipes.map(recipe => this.renderRecipeCard(recipe)).join('');
         
         // Bind click events to recipe cards
@@ -160,8 +183,12 @@ class RecipeManager {
 
     renderTagFilter() {
         const tagFilter = document.getElementById('tagFilter');
-        tagFilter.innerHTML = '<option value="">All Tags</option>' + 
-            this.tags.map(tag => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`).join('');
+        if (tagFilter) {
+            tagFilter.innerHTML = '<option value="">All Tags</option>' + 
+                this.tags.map(tag => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`).join('');
+        } else {
+            console.warn('tagFilter element not found. Cannot render tag filter options.');
+        }
     }
 
     showRecipeDetail(recipe) {
@@ -169,6 +196,11 @@ class RecipeManager {
         const modal = document.getElementById('recipeDetailModal');
         const title = document.getElementById('detailTitle');
         const content = document.getElementById('recipeDetailContent');
+        
+        if (!modal || !title || !content) {
+            console.warn('Recipe detail modal elements not found. Cannot show recipe detail.');
+            return;
+        }
         
         title.textContent = recipe.title;
         content.innerHTML = this.renderRecipeDetail(recipe);
@@ -455,13 +487,19 @@ class RecipeManager {
         
         // Create preview elements for existing images
         const previewContainer = document.getElementById('imagePreviewContainer');
-        images.forEach(imageUrl => {
-            this.createExistingImagePreview(imageUrl);
-        });
+        if (previewContainer) {
+            images.forEach(imageUrl => {
+                this.createExistingImagePreview(imageUrl);
+            });
+        }
     }
 
     createExistingImagePreview(imageUrl) {
         const previewContainer = document.getElementById('imagePreviewContainer');
+        if (!previewContainer) {
+            console.warn('imagePreviewContainer not found, cannot create image preview');
+            return;
+        }
         
         const previewDiv = document.createElement('div');
         previewDiv.className = 'image-preview';
@@ -535,11 +573,21 @@ class RecipeManager {
     }
 
     resetForm() {
-        document.getElementById('recipeForm').reset();
+        const form = document.getElementById('recipeForm');
+        if (form) {
+            form.reset();
+        }
         
         // Reset dynamic sections
-        document.getElementById('ingredientsContainer').innerHTML = '';
-        document.getElementById('instructionsContainer').innerHTML = '';
+        const ingredientsContainer = document.getElementById('ingredientsContainer');
+        const instructionsContainer = document.getElementById('instructionsContainer');
+        
+        if (ingredientsContainer) {
+            ingredientsContainer.innerHTML = '';
+        }
+        if (instructionsContainer) {
+            instructionsContainer.innerHTML = '';
+        }
         
         // Clear image previews
         this.clearImagePreviews();
@@ -549,11 +597,17 @@ class RecipeManager {
     }
 
     closeModal() {
-        document.getElementById('recipeModal').style.display = 'none';
+        const modal = document.getElementById('recipeModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
     closeDetailModal() {
-        document.getElementById('recipeDetailModal').style.display = 'none';
+        const modal = document.getElementById('recipeDetailModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
         this.currentRecipe = null;
     }
 
@@ -623,6 +677,10 @@ class RecipeManager {
 
     createImagePreview(imageUrl, file) {
         const previewContainer = document.getElementById('imagePreviewContainer');
+        if (!previewContainer) {
+            console.warn('imagePreviewContainer not found, cannot create image preview');
+            return;
+        }
         
         const previewDiv = document.createElement('div');
         previewDiv.className = 'image-preview';
@@ -707,7 +765,10 @@ class RecipeManager {
         }
 
         // Show the lightbox with the image
-        document.getElementById('lightboxImage').src = imageUrl;
+        const lightboxImage = document.getElementById('lightboxImage');
+        if (lightboxImage) {
+            lightboxImage.src = imageUrl;
+        }
         lightbox.style.display = 'block';
 
         // Add ESC key listener
