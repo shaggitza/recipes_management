@@ -1,6 +1,7 @@
 """API router for AI-powered recipe import functionality."""
 
 import logging
+import os
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from pydantic import BaseModel, HttpUrl, Field
@@ -52,8 +53,9 @@ async def get_recipe_repository() -> RecipeRepository:
 
 
 async def get_recipe_importer(repo: RecipeRepository = Depends(get_recipe_repository)) -> RecipeImporter:
-    """Dependency to get recipe importer."""
-    return RecipeImporter(repo)
+    """Dependency to get recipe importer with OpenAI API key from environment."""
+    openai_api_key = os.environ.get('OPENAI_API_KEY')
+    return RecipeImporter(repo, openai_api_key=openai_api_key)
 
 
 @router.post("/import", response_model=ImportStatusResponse)

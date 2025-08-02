@@ -44,7 +44,8 @@ class RecipeImporter:
         recipe_repository: RecipeRepository,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        timeout: int = 30
+        timeout: int = 30,
+        openai_api_key: Optional[str] = None
     ):
         """
         Initialize the recipe importer.
@@ -54,6 +55,7 @@ class RecipeImporter:
             max_retries: Maximum number of retry attempts
             retry_delay: Delay between retries in seconds
             timeout: Timeout for web requests
+            openai_api_key: OpenAI API key for AI extraction (optional)
         """
         self.recipe_repository = recipe_repository
         self.max_retries = max_retries
@@ -61,7 +63,7 @@ class RecipeImporter:
         self.timeout = timeout
         
         self.scraper = RecipeScraper(timeout=timeout)
-        self.extractor = RecipeExtractor(use_ai=True)
+        self.extractor = RecipeExtractor(use_ai=True, api_key=openai_api_key)
         self.transformer = RecipeTransformer()
 
     async def import_recipe_from_url(self, url: str, user_metadata: Optional[Dict[str, Any]] = None) -> ImportResult:

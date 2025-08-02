@@ -14,8 +14,8 @@ python-dotenv==1.0.0
 beautifulsoup4==4.13.4
 requests==2.31.0
 playwright==1.54.0
-# langfun[vertexai]==0.0.6  # TODO: Add when available
-# pyglove==0.4.6  # TODO: Add when available
+langfun==0.2.3
+openai==1.51.2
 
 # Testing
 pytest==7.4.3

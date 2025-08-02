@@ -1,27 +1,61 @@
-"""AI-powered recipe extraction module with fallback to structured parsing."""
+"""AI-powered recipe extraction module with langfun integration and fallback to structured parsing."""
 
 import asyncio
 import logging
 import re
 from typing import Optional, List, Dict, Any
 import json
-
-from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult
+import os
 
 logger = logging.getLogger(__name__)
 
+try:
+    import langfun as lf
+    from langfun.core import llm
+    LANGFUN_AVAILABLE = True
+except ImportError:
+    LANGFUN_AVAILABLE = False
+    logger.warning("langfun not available, falling back to rule-based extraction")
+
+from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult
+
 
 class RecipeExtractor:
-    """AI-powered recipe extractor with fallback to rule-based extraction."""
+    """AI-powered recipe extractor with langfun integration and fallback to rule-based extraction."""
     
-    def __init__(self, use_ai: bool = True):
+    def __init__(self, use_ai: bool = True, api_key: Optional[str] = None):
         """
         Initialize the recipe extractor.
         
         Args:
-            use_ai: Whether to use AI extraction (future: langfun integration)
+            use_ai: Whether to use AI extraction (langfun integration)
+            api_key: OpenAI API key for langfun. If None, will try environment variable
         """
-        self.use_ai = use_ai
+        self.use_ai = use_ai and LANGFUN_AVAILABLE
+        self.api_key = api_key or os.environ.get('OPENAI_API_KEY')
+        
+        if self.use_ai and self.api_key:
+            self._configure_langfun()
+        elif self.use_ai and not self.api_key:
+            logger.warning("AI extraction requested but no API key provided, falling back to rule-based")
+            self.use_ai = False
+            
+    def _configure_langfun(self):
+        """Configure langfun with OpenAI backend."""
+        try:
+            # Configure OpenAI as the default language model
+            lf.use_init_args(
+                llm.OpenAI(
+                    api_key=self.api_key,
+                    model='gpt-3.5-turbo',
+                    temperature=0.1,  # Low temperature for consistent extraction
+                    max_tokens=2000
+                )
+            )
+            logger.info("Langfun configured with OpenAI backend")
+        except Exception as e:
+            logger.error(f"Failed to configure langfun: {e}")
+            self.use_ai = False
         
     async def extract_recipe(self, content: str, source_url: str) -> RecipeExtractionResult:
         """
@@ -38,9 +72,13 @@ class RecipeExtractor:
             logger.info(f"Extracting recipe from content (length: {len(content)})")
             
             if self.use_ai:
-                # TODO: Implement langfun AI extraction when available
-                # For now, fall back to rule-based extraction
-                return await self._extract_with_rules(content, source_url)
+                # Use langfun AI extraction
+                result = await self._extract_with_ai(content, source_url)
+                # If AI extraction fails, fall back to rule-based
+                if not result.success:
+                    logger.info("AI extraction failed, falling back to rule-based")
+                    return await self._extract_with_rules(content, source_url)
+                return result
             else:
                 return await self._extract_with_rules(content, source_url)
                 
@@ -55,7 +93,7 @@ class RecipeExtractor:
 
     async def _extract_with_ai(self, content: str, source_url: str) -> RecipeExtractionResult:
         """
-        Extract recipe using AI (langfun) - placeholder for future implementation.
+        Extract recipe using AI (langfun) with structured output.
         
         Args:
             content: Content to extract from
@@ -64,19 +102,152 @@ class RecipeExtractor:
         Returns:
             Extraction result
         """
-        # TODO: Implement langfun integration
-        # This is a placeholder for the AI extraction logic
+        if not LANGFUN_AVAILABLE:
+            raise ValueError("langfun not available")
+            
+        try:
+            logger.info("Using langfun AI extraction")
+            
+            # Create the langfun extraction function
+            @lf.use_init_args(lf.LangFunc)
+            def extract_recipe_data(content_text: str) -> Dict[str, Any]:
+                """Extract structured recipe data from web content.
+                
+                Args:
+                    content_text: The web page content containing the recipe
+                    
+                Returns:
+                    A dictionary with the extracted recipe data in JSON format
+                """
+                return lf.query(
+                    self._create_langfun_prompt(content_text),
+                    lf.Json[Dict[str, Any]]  # Structured JSON output
+                )
+            
+            # Execute the langfun extraction
+            loop = asyncio.get_event_loop()
+            ai_response = await loop.run_in_executor(
+                None, 
+                lambda: extract_recipe_data(content[:4000])  # Limit content length for token limits
+            )
+            
+            # Parse the AI response and create ExtractedRecipe
+            recipe = self._parse_ai_response(ai_response, source_url)
+            
+            return RecipeExtractionResult(
+                success=True,
+                recipe=recipe,
+                error=None,
+                source_url=source_url,
+                extraction_metadata={
+                    "method": "langfun_ai", 
+                    "content_length": len(content),
+                    "model": "gpt-3.5-turbo"
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"AI extraction failed: {e}")
+            return RecipeExtractionResult(
+                success=False,
+                recipe=None,
+                error=f"AI extraction failed: {str(e)}",
+                source_url=source_url
+            )
+
+    def _create_langfun_prompt(self, content: str) -> str:
+        """
+        Create a prompt optimized for langfun structured extraction.
         
-        # For now, create a prompt that would be sent to the AI
-        ai_prompt = self._create_extraction_prompt(content)
+        Args:
+            content: Web content to extract from
+            
+        Returns:
+            Formatted prompt for langfun
+        """
+        return f"""
+Extract recipe information from the following web content. The content may be in Romanian or other languages - please translate everything to English.
+
+Please return the data in this exact JSON structure:
+{{
+    "title": "Recipe title in English",
+    "description": "Brief description in English (optional)",
+    "ingredients": [
+        {{"name": "ingredient name", "amount": "quantity", "unit": "measurement unit"}}
+    ],
+    "instructions": ["Step 1 in English", "Step 2 in English"],
+    "prep_time": 30,
+    "cook_time": 45,
+    "servings": 4,
+    "difficulty": "easy",
+    "tags": ["cuisine_type", "meal_type"]
+}}
+
+Rules:
+- Translate all text to English
+- For missing prep_time/cook_time, estimate reasonable values
+- For missing servings, estimate based on ingredient quantities
+- Difficulty should be "easy", "medium", or "hard"
+- Extract meaningful tags like cuisine type, meal type, etc.
+- Ensure all ingredient amounts include units when possible
+
+Web Content:
+{content}
+"""
+
+    def _parse_ai_response(self, ai_response: Dict[str, Any], source_url: str) -> ExtractedRecipe:
+        """
+        Parse AI response and create ExtractedRecipe object.
         
-        # Placeholder: In a real implementation, this would call langfun
-        # For now, fall back to rule-based extraction
-        return await self._extract_with_rules(content, source_url)
+        Args:
+            ai_response: Dictionary response from AI
+            source_url: Source URL
+            
+        Returns:
+            ExtractedRecipe object
+        """
+        try:
+            # Convert ingredients list to ExtractedIngredient objects
+            ingredients = []
+            for ing_data in ai_response.get('ingredients', []):
+                if isinstance(ing_data, dict):
+                    ingredient = ExtractedIngredient(
+                        name=ing_data.get('name', ''),
+                        amount=str(ing_data.get('amount', '1')),
+                        unit=ing_data.get('unit')
+                    )
+                    ingredients.append(ingredient)
+            
+            # Create the recipe object
+            recipe = ExtractedRecipe(
+                title=ai_response.get('title', 'AI Extracted Recipe'),
+                description=ai_response.get('description'),
+                ingredients=ingredients,
+                instructions=ai_response.get('instructions', []),
+                prep_time=ai_response.get('prep_time'),
+                cook_time=ai_response.get('cook_time'), 
+                servings=ai_response.get('servings'),
+                difficulty=ai_response.get('difficulty'),
+                tags=ai_response.get('tags', []),
+                source_url=source_url
+            )
+            
+            return recipe
+            
+        except Exception as e:
+            logger.error(f"Failed to parse AI response: {e}")
+            # Return a minimal recipe if parsing fails
+            return ExtractedRecipe(
+                title="AI Extraction Error",
+                description="Failed to parse AI response",
+                ingredients=[],
+                instructions=[],
+                source_url=source_url
+            )
 
     def _create_extraction_prompt(self, content: str) -> str:
         """
-        Create a prompt for AI extraction.
+        Create a prompt for AI extraction (legacy method for compatibility).
         
         Args:
             content: Web content to extract from
@@ -84,29 +255,7 @@ class RecipeExtractor:
         Returns:
             Formatted prompt for AI
         """
-        prompt = f"""
-Extract recipe information from the following web content and return it as structured JSON.
-The recipe should be translated to English if it's in another language.
-
-Required JSON format:
-{{
-    "title": "Recipe title in English",
-    "description": "Brief description in English",
-    "ingredients": [
-        {{"name": "ingredient name", "amount": "quantity", "unit": "measurement unit"}}
-    ],
-    "instructions": ["Step 1 in English", "Step 2 in English"],
-    "prep_time": "preparation time in minutes (number only)",
-    "cook_time": "cooking time in minutes (number only)", 
-    "servings": "number of servings (number only)",
-    "difficulty": "easy, medium, or hard",
-    "tags": ["tag1", "tag2"]
-}}
-
-Web Content:
-{content[:3000]}...  # Truncate for prompt length
-"""
-        return prompt
+        return self._create_langfun_prompt(content)
 
     async def _extract_with_rules(self, content: str, source_url: str) -> RecipeExtractionResult:
         """

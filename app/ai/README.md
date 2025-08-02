@@ -1,11 +1,11 @@
 # AI Recipe Import Module
 
-This module provides AI-powered recipe extraction from web pages, implementing the requested functionality to scrape recipe websites and extract structured recipe data.
+This module provides AI-powered recipe extraction from web pages using langfun, implementing the requested functionality to scrape recipe websites and extract structured recipe data with advanced language model capabilities.
 
 ## Features
 
 - **Web Scraping**: Uses requests/BeautifulSoup (with Playwright ready for future enhancement)
-- **AI Extraction**: Rule-based extraction with langfun integration ready for future implementation
+- **AI Extraction**: Full langfun integration with OpenAI GPT models for intelligent recipe parsing
 - **Data Transformation**: Converts extracted data to application Recipe models
 - **Retry Logic**: Robust error handling with configurable retry policies
 - **Modular Design**: Clean separation of concerns across multiple modules
@@ -17,7 +17,7 @@ app/ai/
 ├── __init__.py          # Module initialization
 ├── models.py           # PyGlove-style models for extracted data
 ├── scraper.py          # Web scraping with requests/BeautifulSoup
-├── extractor.py        # AI extraction (rule-based + langfun ready)
+├── extractor.py        # AI extraction with full langfun integration
 ├── transformer.py      # Data transformation to Recipe models
 └── importer.py         # Import service with retry logic
 
@@ -77,22 +77,27 @@ Get information about supported recipe sources.
 
 ## Usage Examples
 
-### Basic Import
+### Basic Import with AI
 ```python
+import os
 from app.ai.importer import RecipeImporter
 from app.repositories.recipe_repository import RecipeRepository
 
-# Initialize
-repository = RecipeRepository()
-importer = RecipeImporter(repository)
+# Set your OpenAI API key
+os.environ['OPENAI_API_KEY'] = 'your-api-key-here'
 
-# Import a recipe
+# Initialize with AI extraction
+repository = RecipeRepository()
+importer = RecipeImporter(repository, openai_api_key=os.environ.get('OPENAI_API_KEY'))
+
+# Import a recipe with AI extraction
 result = await importer.import_recipe_from_url(
     "https://raftulbunicii.ro/retete-romanesti/retete-din-muntenia/scovergi-muntenesti/"
 )
 
 if result.success:
     print(f"Recipe imported with ID: {result.recipe_id}")
+    print(f"Extraction method: {result.extraction_result.extraction_metadata.get('method')}")
 else:
     print(f"Import failed: {result.error}")
 ```
@@ -111,16 +116,19 @@ successful = sum(1 for r in results.values() if r.success)
 print(f"Imported {successful}/{len(urls)} recipes successfully")
 ```
 
-### Using the API
+### Using the API with AI
 ```bash
-# Import a single recipe
+# Set your OpenAI API key in environment
+export OPENAI_API_KEY="your-openai-api-key-here"
+
+# Import a recipe with AI extraction
 curl -X POST "http://localhost:8000/ai/import" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://raftulbunicii.ro/retete-romanesti/retete-din-muntenia/scovergi-muntenesti/"
   }'
 
-# Test the system
+# Test the AI system
 curl -X GET "http://localhost:8000/ai/import/test"
 
 # Get supported sources
@@ -129,12 +137,35 @@ curl -X GET "http://localhost:8000/ai/import/sources"
 
 ## Configuration
 
-The importer can be configured with:
+The importer requires an OpenAI API key for AI extraction:
+
+```bash
+export OPENAI_API_KEY="your-openai-api-key-here"
+```
+
+Additional configuration options:
 
 - **max_retries**: Number of retry attempts (default: 3)
 - **retry_delay**: Delay between retries in seconds (default: 1.0)
 - **timeout**: Request timeout in seconds (default: 30)
 - **max_concurrent**: Maximum concurrent imports for batch operations (default: 3)
+
+## AI Integration
+
+The system now uses langfun with OpenAI GPT models for intelligent recipe extraction:
+
+### Automatic Translation
+- Recipes in Romanian, Spanish, French, or other languages are automatically translated to English
+- Preserves original cooking techniques and cultural context
+
+### Structured Extraction  
+- Uses langfun's JSON output formatting for consistent data structure
+- Intelligent parsing of ingredients with amounts, units, and names
+- Smart estimation of missing cooking times and servings
+
+### Fallback System
+- If AI extraction fails, automatically falls back to rule-based parsing
+- Graceful degradation ensures recipes are still imported even without API access
 
 ## Error Handling
 
@@ -147,20 +178,23 @@ The system includes comprehensive error handling:
 
 ## Future Enhancements
 
-### Langfun Integration
-The system is designed to easily integrate langfun when available:
+### Advanced Langfun Features
+The current implementation provides a foundation for advanced langfun capabilities:
 
 ```python
-# In extractor.py
-async def _extract_with_ai(self, content: str, source_url: str) -> RecipeExtractionResult:
-    """Extract recipe using langfun AI."""
-    import langfun as lf
+# In extractor.py - ready for advanced langfun features
+async def _extract_with_advanced_ai(self, content: str, source_url: str):
+    """Advanced AI extraction with multi-model support."""
     
-    prompt = self._create_extraction_prompt(content)
-    response = await lf.query(prompt, model="gemini-pro")
+    # Support for different model backends
+    with lf.use_init_args(lf.llm.VertexAI(model='gemini-pro')):
+        result = await self._extract_with_ai(content, source_url)
     
-    # Parse AI response and return structured data
-    return self._parse_ai_response(response, source_url)
+    # Chain of thought reasoning for complex recipes
+    with lf.use_init_args(lf.llm.OpenAI(temperature=0.0)):
+        refined_result = await self._refine_extraction(result)
+    
+    return refined_result
 ```
 
 ### Playwright Integration
@@ -210,20 +244,28 @@ The system uses fallback parsing for other recipe websites.
 - `playwright`: Ready for JavaScript-heavy sites
 - `pydantic`: Data validation and models
 - `fastapi`: API framework
-- `langfun`: AI integration (to be added)
-- `pyglove`: Structured data modeling (to be added)
+- `langfun`: AI integration with language models ✅ **IMPLEMENTED**
+- `openai`: OpenAI API client for GPT models ✅ **IMPLEMENTED**
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Scraping Fails**: Website may block automated requests
+1. **AI Extraction Fails**: OpenAI API key not set or invalid
+   - Solution: Set `OPENAI_API_KEY` environment variable with valid key
+   - Fallback: System automatically uses rule-based extraction
+
+2. **Langfun Import Error**: Package not installed
+   - Solution: `pip install langfun openai`
+   - Fallback: System disables AI extraction and uses rule-based parsing
+
+3. **Scraping Fails**: Website may block automated requests
    - Solution: Add delays, rotate user agents, or use Playwright
 
-2. **Extraction Returns No Data**: Content structure not recognized
-   - Solution: Check the extraction patterns in `extractor.py`
+4. **Extraction Returns No Data**: Content structure not recognized
+   - Solution: AI extraction is more flexible than rule-based patterns
 
-3. **Import Fails**: Database connection issues
+5. **Import Fails**: Database connection issues
    - Solution: Verify MongoDB connection and credentials
 
 ### Debugging
