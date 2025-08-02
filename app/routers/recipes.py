@@ -1,5 +1,7 @@
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+import os
+import uuid
+from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File
 from fastapi.responses import JSONResponse
 
 from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate, RecipeResponse
@@ -124,17 +126,6 @@ async def get_recipes_by_difficulty(
     return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
 
 
-@router.get("/meal-times/{meal_times}", response_model=List[RecipeResponse])
-async def get_recipes_by_meal_times(
-    meal_times: str,
-    service: RecipeService = Depends(get_recipe_service)
-) -> List[RecipeResponse]:
-    """Get recipes filtered by meal times (comma-separated)"""
-    meal_time_list = [mt.strip().lower() for mt in meal_times.split(",") if mt.strip()]
-    recipes = await service.get_recipes_by_meal_times(meal_time_list)
-    return [RecipeResponse.from_recipe(recipe) for recipe in recipes]
-
-
 @router.get("/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe(
     recipe_id: str,
@@ -166,4 +157,45 @@ async def delete_recipe(
     return JSONResponse(
         content={"message": "Recipe deleted successfully"},
         status_code=200
+    )
+
+
+@router.post("/upload-image")
+async def upload_image(file: UploadFile = File(...)) -> JSONResponse:
+    """Upload an image file and return its URL"""
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be an image (jpeg, png, gif, etc.)"
+        )
+    
+    # Validate file size (5MB max)
+    max_size = 5 * 1024 * 1024  # 5MB
+    file_content = await file.read()
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=400,
+            detail="File size must be less than 5MB"
+        )
+    
+    # Generate unique filename
+    file_extension = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    
+    # Create images directory if it doesn't exist
+    images_dir = "static/images"
+    os.makedirs(images_dir, exist_ok=True)
+    
+    # Save file
+    file_path = os.path.join(images_dir, unique_filename)
+    with open(file_path, "wb") as buffer:
+        buffer.write(file_content)
+    
+    # Return the URL path for accessing the image
+    image_url = f"/static/images/{unique_filename}"
+    
+    return JSONResponse(
+        content={"url": image_url, "filename": unique_filename},
+        status_code=201
     )

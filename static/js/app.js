@@ -4,6 +4,7 @@ class RecipeManager {
         this.tags = [];
         this.currentRecipe = null;
         this.editingRecipe = null;
+        this.uploadedImages = []; // Track uploaded image URLs
         
         this.init();
     }
@@ -16,32 +17,45 @@ class RecipeManager {
     }
 
     bindEvents() {
+        // Helper function to safely add event listeners
+        const safeAddEventListener = (elementId, event, handler) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener(event, handler);
+            } else {
+                console.warn(`Element with ID '${elementId}' not found. Skipping event binding.`);
+            }
+        };
+
         // Modal controls
-        document.getElementById('addRecipeBtn').addEventListener('click', () => this.showAddModal());
-        document.getElementById('closeModal').addEventListener('click', () => this.closeModal());
-        document.getElementById('closeDetailModal').addEventListener('click', () => this.closeDetailModal());
-        document.getElementById('cancelBtn').addEventListener('click', () => this.closeModal());
+        safeAddEventListener('addRecipeBtn', 'click', () => this.showAddModal());
+        safeAddEventListener('closeModal', 'click', () => this.closeModal());
+        safeAddEventListener('closeDetailModal', 'click', () => this.closeDetailModal());
+        safeAddEventListener('cancelBtn', 'click', () => this.closeModal());
 
         // Form submission
-        document.getElementById('recipeForm').addEventListener('submit', (e) => this.handleSubmit(e));
+        safeAddEventListener('recipeForm', 'submit', (e) => this.handleSubmit(e));
 
         // Search and filters
-        document.getElementById('searchBtn').addEventListener('click', () => this.searchRecipes());
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        safeAddEventListener('searchBtn', 'click', () => this.searchRecipes());
+        safeAddEventListener('searchInput', 'keypress', (e) => {
             if (e.key === 'Enter') this.searchRecipes();
         });
-        document.getElementById('difficultyFilter').addEventListener('change', () => this.searchRecipes());
-        document.getElementById('tagFilter').addEventListener('change', () => this.searchRecipes());
-        document.getElementById('mealTimeFilter').addEventListener('change', () => this.searchRecipes());
-        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
+        safeAddEventListener('difficultyFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('tagFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('mealTimeFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('clearFiltersBtn', 'click', () => this.clearFilters());
 
         // Dynamic form elements
-        document.getElementById('addIngredient').addEventListener('click', () => this.addIngredientRow());
-        document.getElementById('addInstruction').addEventListener('click', () => this.addInstructionRow());
+        safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
+        safeAddEventListener('addInstruction', 'click', () => this.addInstructionRow());
 
         // Recipe detail actions
-        document.getElementById('editRecipeBtn').addEventListener('click', () => this.editCurrentRecipe());
-        document.getElementById('deleteRecipeBtn').addEventListener('click', () => this.deleteCurrentRecipe());
+        safeAddEventListener('editRecipeBtn', 'click', () => this.editCurrentRecipe());
+        safeAddEventListener('deleteRecipeBtn', 'click', () => this.deleteCurrentRecipe());
+
+        // Image upload
+        safeAddEventListener('imageUpload', 'change', (e) => this.handleImageUpload(e));
 
         // Close modals on outside click
         window.addEventListener('click', (e) => {
@@ -106,11 +120,15 @@ class RecipeManager {
         try {
             this.showLoading(true);
             
-            const search = document.getElementById('searchInput').value;
-            const difficulty = document.getElementById('difficultyFilter').value;
-            const tag = document.getElementById('tagFilter').value;
-            const mealTimeSelect = document.getElementById('mealTimeFilter');
-            const mealTimes = Array.from(mealTimeSelect.selectedOptions).map(option => option.value).filter(v => v);
+            const searchElement = document.getElementById('searchInput');
+            const difficultyElement = document.getElementById('difficultyFilter');
+            const tagElement = document.getElementById('tagFilter');
+            const mealTimeElement = document.getElementById('mealTimeFilter');
+            
+            const search = searchElement ? searchElement.value : '';
+            const difficulty = difficultyElement ? difficultyElement.value : '';
+            const tag = tagElement ? tagElement.value : '';
+            const mealTimes = mealTimeElement ? Array.from(mealTimeElement.selectedOptions).map(option => option.value).filter(v => v) : [];
             
             const params = new URLSearchParams();
             if (search) params.append('search', search);
@@ -145,37 +163,26 @@ class RecipeManager {
         }
     }
 
-    clearFilters() {
-        // Clear search input
-        document.getElementById('searchInput').value = '';
-        
-        // Reset difficulty filter
-        document.getElementById('difficultyFilter').value = '';
-        
-        // Reset tag filter
-        document.getElementById('tagFilter').value = '';
-        
-        // Reset meal time filter (multiselect)
-        const mealTimeFilter = document.getElementById('mealTimeFilter');
-        Array.from(mealTimeFilter.options).forEach(option => {
-            option.selected = false;
-        });
-        
-        // Reload all recipes
-        this.loadRecipes();
-    }
-
     renderRecipes() {
         const container = document.getElementById('recipesContainer');
         const noResults = document.getElementById('noResults');
         
-        if (this.recipes.length === 0) {
-            container.innerHTML = '';
-            noResults.style.display = 'block';
+        if (!container) {
+            console.warn('recipesContainer element not found. Cannot render recipes.');
             return;
         }
         
-        noResults.style.display = 'none';
+        if (this.recipes.length === 0) {
+            container.innerHTML = '';
+            if (noResults) {
+                noResults.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (noResults) {
+            noResults.style.display = 'none';
+        }
         container.innerHTML = this.recipes.map(recipe => this.renderRecipeCard(recipe)).join('');
         
         // Bind click events to recipe cards
@@ -187,37 +194,41 @@ class RecipeManager {
     renderRecipeCard(recipe) {
         const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
         const timeDisplay = totalTime > 0 ? `${totalTime} min` : '';
+        const hasImage = recipe.images && recipe.images.length > 0;
         
         return `
-            <div class="recipe-card">
-                <div class="recipe-card-header">
-                    <h3 class="recipe-card-title">${this.escapeHtml(recipe.title)}</h3>
-                    ${recipe.description ? `<p class="recipe-card-description">${this.escapeHtml(recipe.description)}</p>` : ''}
-                </div>
-                <div class="recipe-card-body">
-                    <div class="recipe-meta">
-                        ${timeDisplay ? `<div class="recipe-meta-item"><i class="fas fa-clock"></i> ${timeDisplay}</div>` : ''}
-                        ${recipe.servings ? `<div class="recipe-meta-item"><i class="fas fa-users"></i> ${recipe.servings} servings</div>` : ''}
-                        ${recipe.difficulty ? `<div class="recipe-meta-item"><i class="fas fa-signal"></i> ${this.capitalize(recipe.difficulty)}</div>` : ''}
+            <div class="recipe-card ${hasImage ? 'with-image' : ''}">
+                ${hasImage ? `<img src="${recipe.images[0]}" alt="${this.escapeHtml(recipe.title)}" class="recipe-card-image" />` : ''}
+                <div class="recipe-card-content">
+                    <div class="recipe-card-header">
+                        <h3 class="recipe-card-title">${this.escapeHtml(recipe.title)}</h3>
+                        ${recipe.description ? `<p class="recipe-card-description">${this.escapeHtml(recipe.description)}</p>` : ''}
                     </div>
-                    ${recipe.tags && recipe.tags.length > 0 ? `
-                        <div class="recipe-tags">
-                            ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    <div class="recipe-card-body">
+                        <div class="recipe-meta">
+                            ${timeDisplay ? `<div class="recipe-meta-item"><i class="fas fa-clock"></i> ${timeDisplay}</div>` : ''}
+                            ${recipe.servings ? `<div class="recipe-meta-item"><i class="fas fa-users"></i> ${recipe.servings} servings</div>` : ''}
+                            ${recipe.difficulty ? `<div class="recipe-meta-item"><i class="fas fa-signal"></i> ${this.capitalize(recipe.difficulty)}</div>` : ''}
                         </div>
-                    ` : ''}
-                    ${recipe.meal_times && recipe.meal_times.length > 0 ? `
-                        <div class="recipe-meal-times">
-                            ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
-                        </div>
-                    ` : ''}
-                    ${recipe.source && recipe.source.url ? `
-                        <div class="recipe-source">
-                            <i class="fas fa-link"></i> 
-                            <a href="${recipe.source.url}" target="_blank" class="source-link" onclick="event.stopPropagation()">
-                                ${recipe.source.name || recipe.source.type || 'Source'}
-                            </a>
-                        </div>
-                    ` : ''}
+                        ${recipe.tags && recipe.tags.length > 0 ? `
+                            <div class="recipe-tags">
+                                ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                            <div class="recipe-meal-times">
+                                ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        ${recipe.source && recipe.source.url ? `
+                            <div class="recipe-source">
+                                <i class="fas fa-link"></i> 
+                                <a href="${recipe.source.url}" target="_blank" class="source-link" onclick="event.stopPropagation()">
+                                    ${recipe.source.name || recipe.source.type || 'Source'}
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -225,16 +236,49 @@ class RecipeManager {
 
     renderTagFilter() {
         const tagFilter = document.getElementById('tagFilter');
-        tagFilter.innerHTML = '<option value="">All Tags</option>' + 
-            this.tags.map(tag => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`).join('');
+        if (tagFilter) {
+            tagFilter.innerHTML = '<option value="">All Tags</option>' + 
+                this.tags.map(tag => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)}</option>`).join('');
+        } else {
+            console.warn('tagFilter element not found. Cannot render tag filter options.');
+        }
     }
 
     renderMealTimeFilter() {
         const mealTimeFilter = document.getElementById('mealTimeFilter');
         const allMealTimes = ['breakfast', 'lunch', 'dinner', 'snack', 'brunch', 'dessert'];
-        mealTimeFilter.innerHTML = allMealTimes.map(mealTime => 
-            `<option value="${mealTime}">${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)}</option>`
-        ).join('');
+        if (mealTimeFilter) {
+            mealTimeFilter.innerHTML = allMealTimes.map(mealTime => 
+                `<option value="${mealTime}">${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)}</option>`
+            ).join('');
+        } else {
+            console.warn('mealTimeFilter element not found. Cannot render meal time filter options.');
+        }
+    }
+
+    clearFilters() {
+        // Clear search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        
+        // Reset difficulty filter
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        if (difficultyFilter) difficultyFilter.value = '';
+        
+        // Reset tag filter
+        const tagFilter = document.getElementById('tagFilter');
+        if (tagFilter) tagFilter.value = '';
+        
+        // Reset meal time filter (multiselect)
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        if (mealTimeFilter) {
+            Array.from(mealTimeFilter.options).forEach(option => {
+                option.selected = false;
+            });
+        }
+        
+        // Reload all recipes
+        this.loadRecipes();
     }
 
     showRecipeDetail(recipe) {
@@ -242,6 +286,11 @@ class RecipeManager {
         const modal = document.getElementById('recipeDetailModal');
         const title = document.getElementById('detailTitle');
         const content = document.getElementById('recipeDetailContent');
+        
+        if (!modal || !title || !content) {
+            console.warn('Recipe detail modal elements not found. Cannot show recipe detail.');
+            return;
+        }
         
         title.textContent = recipe.title;
         content.innerHTML = this.renderRecipeDetail(recipe);
@@ -251,6 +300,8 @@ class RecipeManager {
     renderRecipeDetail(recipe) {
         return `
             ${recipe.description ? `<p style="margin-bottom: 2rem; font-size: 1.1rem; color: #666;">${this.escapeHtml(recipe.description)}</p>` : ''}
+            
+            ${recipe.images && recipe.images.length > 0 ? this.displayRecipeImages(recipe.images) : ''}
             
             <div class="detail-meta">
                 ${recipe.prep_time ? `
@@ -439,6 +490,9 @@ class RecipeManager {
         // Instructions
         recipe.instructions = this.getInstructionsFromForm();
         
+        // Images
+        recipe.images = this.uploadedImages || [];
+        
         return recipe;
     }
 
@@ -503,6 +557,9 @@ class RecipeManager {
         
         // Instructions
         this.populateInstructions(recipe.instructions || []);
+        
+        // Images
+        this.populateImages(recipe.images || []);
     }
 
     populateIngredients(ingredients) {
@@ -529,6 +586,50 @@ class RecipeManager {
                 this.addInstructionRow(inst);
             });
         }
+    }
+
+    populateImages(images) {
+        // Clear existing previews and uploaded images
+        this.clearImagePreviews();
+        
+        // Set uploaded images array
+        this.uploadedImages = [...images];
+        
+        // Create preview elements for existing images
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        if (previewContainer) {
+            images.forEach(imageUrl => {
+                this.createExistingImagePreview(imageUrl);
+            });
+        }
+    }
+
+    createExistingImagePreview(imageUrl) {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        if (!previewContainer) {
+            console.warn('imagePreviewContainer not found, cannot create image preview');
+            return;
+        }
+        
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'image-preview';
+        previewDiv.dataset.imageUrl = imageUrl;
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = 'Recipe image';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-image';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = (e) => {
+            e.preventDefault();
+            this.removeImagePreview(previewDiv, imageUrl);
+        };
+
+        previewDiv.appendChild(img);
+        previewDiv.appendChild(removeBtn);
+        previewContainer.appendChild(previewDiv);
     }
 
     addIngredientRow(ingredient = null) {
@@ -582,11 +683,24 @@ class RecipeManager {
     }
 
     resetForm() {
-        document.getElementById('recipeForm').reset();
+        const form = document.getElementById('recipeForm');
+        if (form) {
+            form.reset();
+        }
         
         // Reset dynamic sections
-        document.getElementById('ingredientsContainer').innerHTML = '';
-        document.getElementById('instructionsContainer').innerHTML = '';
+        const ingredientsContainer = document.getElementById('ingredientsContainer');
+        const instructionsContainer = document.getElementById('instructionsContainer');
+        
+        if (ingredientsContainer) {
+            ingredientsContainer.innerHTML = '';
+        }
+        if (instructionsContainer) {
+            instructionsContainer.innerHTML = '';
+        }
+        
+        // Clear image previews
+        this.clearImagePreviews();
         
         // Reset meal time checkboxes
         const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
@@ -599,11 +713,17 @@ class RecipeManager {
     }
 
     closeModal() {
-        document.getElementById('recipeModal').style.display = 'none';
+        const modal = document.getElementById('recipeModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
     closeDetailModal() {
-        document.getElementById('recipeDetailModal').style.display = 'none';
+        const modal = document.getElementById('recipeDetailModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
         this.currentRecipe = null;
     }
 
@@ -621,6 +741,180 @@ class RecipeManager {
         alert('Error: ' + message);
     }
 
+    // Image handling methods
+    async handleImageUpload(event) {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        
+        for (const file of files) {
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                this.showError('Please select only image files');
+                continue;
+            }
+
+            // Check file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                this.showError('Image size must be less than 5MB');
+                continue;
+            }
+
+            try {
+                // Upload file
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/recipes/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const result = await response.json();
+                this.uploadedImages.push(result.url);
+
+                // Create preview element
+                this.createImagePreview(result.url, file);
+                
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                this.showError('Failed to upload image');
+            }
+        }
+
+        // Clear the file input
+        event.target.value = '';
+    }
+
+    createImagePreview(imageUrl, file) {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        if (!previewContainer) {
+            console.warn('imagePreviewContainer not found, cannot create image preview');
+            return;
+        }
+        
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'image-preview';
+        previewDiv.dataset.imageUrl = imageUrl;
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = file.name;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-image';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = (e) => {
+            e.preventDefault();
+            this.removeImagePreview(previewDiv, imageUrl);
+        };
+
+        previewDiv.appendChild(img);
+        previewDiv.appendChild(removeBtn);
+        previewContainer.appendChild(previewDiv);
+    }
+
+    removeImagePreview(previewElement, imageUrl) {
+        // Remove from uploaded images array
+        this.uploadedImages = this.uploadedImages.filter(url => url !== imageUrl);
+        
+        // Remove preview element
+        previewElement.remove();
+    }
+
+    clearImagePreviews() {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        previewContainer.innerHTML = '';
+        this.uploadedImages = [];
+    }
+
+    displayRecipeImages(images) {
+        if (!images || images.length === 0) return '';
+        
+        return `
+            <div class="recipe-image-gallery">
+                ${images.map(imageUrl => `
+                    <div class="recipe-image-item" onclick="window.recipeManager.showImageLightbox('${imageUrl}')">
+                        <img src="${imageUrl}" alt="Recipe image" />
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    showImageLightbox(imageUrl) {
+        // Create lightbox if it doesn't exist
+        let lightbox = document.getElementById('imageLightbox');
+        if (!lightbox) {
+            lightbox = document.createElement('div');
+            lightbox.id = 'imageLightbox';
+            lightbox.className = 'image-lightbox';
+            lightbox.innerHTML = `
+                <div class="lightbox-content">
+                    <img id="lightboxImage" src="" alt="Recipe image" />
+                    <button class="lightbox-close">&times;</button>
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+
+            // Add event listeners for closing
+            const closeBtn = lightbox.querySelector('.lightbox-close');
+            closeBtn.addEventListener('click', () => this.closeLightbox());
+
+            // Close on background click
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) {
+                    this.closeLightbox();
+                }
+            });
+
+            // Prevent content click from closing
+            const content = lightbox.querySelector('.lightbox-content');
+            content.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // Show the lightbox with the image
+        const lightboxImage = document.getElementById('lightboxImage');
+        if (lightboxImage) {
+            lightboxImage.src = imageUrl;
+        }
+        lightbox.style.display = 'block';
+
+        // Add ESC key listener
+        this.addLightboxKeyListener();
+    }
+
+    closeLightbox() {
+        const lightbox = document.getElementById('imageLightbox');
+        if (lightbox) {
+            lightbox.style.display = 'none';
+        }
+        this.removeLightboxKeyListener();
+    }
+
+    addLightboxKeyListener() {
+        this.lightboxKeyHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeLightbox();
+            }
+        };
+        document.addEventListener('keydown', this.lightboxKeyHandler);
+    }
+
+    removeLightboxKeyListener() {
+        if (this.lightboxKeyHandler) {
+            document.removeEventListener('keydown', this.lightboxKeyHandler);
+            this.lightboxKeyHandler = null;
+        }
+    }
+
     escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -636,5 +930,5 @@ class RecipeManager {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new RecipeManager();
+    window.recipeManager = new RecipeManager();
 });
