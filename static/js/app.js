@@ -5,6 +5,7 @@ class RecipeManager {
         this.currentRecipe = null;
         this.editingRecipe = null;
         this.uploadedImages = []; // Track uploaded image URLs
+        this.savedFilters = null; // Store filters when navigating to recipe
         
         this.init();
     }
@@ -13,6 +14,170 @@ class RecipeManager {
         this.bindEvents();
         this.loadRecipes();
         this.loadTags();
+        this.loadMealTimes();
+        this.initMobileFeatures();
+        this.initUrlHandling();
+    }
+
+    initMobileFeatures() {
+        // Mobile filter toggle
+        this.setupMobileFilters();
+        
+        // Mobile touch enhancements
+        this.setupTouchEnhancements();
+        
+        // Check if we're on mobile and show/hide appropriate elements
+        this.checkMobileView();
+    }
+    
+    setupMobileFilters() {
+        const filterToggle = document.getElementById('filterToggle');
+        const filterContent = document.getElementById('filterContent');
+        
+        if (filterToggle && filterContent) {
+            // Add click handler for mobile filter toggle
+            filterToggle.addEventListener('click', () => {
+                console.log('Filter toggle clicked'); // Debug log
+                
+                const isExpanded = filterContent.classList.contains('expanded');
+                console.log('Current expanded state:', isExpanded); // Debug log
+                
+                filterContent.classList.toggle('expanded');
+                filterToggle.classList.toggle('active');
+                
+                // Update button text and icon
+                if (isExpanded) {
+                    filterToggle.innerHTML = '<i class="fas fa-filter"></i> Filters';
+                } else {
+                    filterToggle.innerHTML = '<i class="fas fa-times"></i> Hide Filters';
+                }
+                
+                console.log('New expanded state:', filterContent.classList.contains('expanded')); // Debug log
+            });
+        } else {
+            console.warn('Filter toggle or content not found');
+        }
+    }
+    
+    setupTouchEnhancements() {
+        // Add haptic feedback simulation for recipe cards (if supported)
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.recipe-card')) {
+                // Vibrate if supported (very subtle)
+                if (navigator.vibrate) {
+                    navigator.vibrate(10);
+                }
+            }
+        });
+        
+        // Improve scroll behavior for modals on mobile
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+            });
+        });
+    }
+    
+    checkMobileView() {
+        const isMobile = window.innerWidth <= 768;
+        const filterToggle = document.getElementById('filterToggle');
+        const filterContent = document.getElementById('filterContent');
+        
+        if (filterToggle && filterContent) {
+            if (isMobile) {
+                filterToggle.style.display = 'block';
+                filterContent.classList.remove('expanded');
+                filterToggle.classList.remove('active');
+            } else {
+                filterToggle.style.display = 'none';
+                filterContent.classList.add('expanded');
+                filterContent.style.display = 'grid';
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.checkMobileView();
+        });
+    }
+    
+    initUrlHandling() {
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.recipeId) {
+                // Going back to a recipe
+                const recipe = this.recipes.find(r => r.id === event.state.recipeId);
+                if (recipe) {
+                    this.showRecipeDetail(recipe, false); // false = don't update URL again
+                }
+            } else {
+                // Going back to main list
+                this.closeDetailModal(false); // false = don't update URL again
+                // Restore saved filters if they exist
+                if (this.savedFilters) {
+                    this.restoreFilters(this.savedFilters);
+                    this.savedFilters = null;
+                }
+            }
+        });
+        
+        // Check for recipe ID in URL on page load
+        this.checkUrlForRecipe();
+    }
+    
+    checkUrlForRecipe() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hash = window.location.hash;
+        
+        // Check for recipe ID in hash (e.g., #recipe-123)
+        if (hash.startsWith('#recipe-')) {
+            const recipeId = hash.substring(8); // Remove '#recipe-' prefix
+            // Wait for recipes to load, then show the recipe
+            const checkAndShow = () => {
+                const recipe = this.recipes.find(r => r.id === recipeId);
+                if (recipe) {
+                    this.showRecipeDetail(recipe, false);
+                } else if (this.recipes.length === 0) {
+                    // Recipes not loaded yet, wait a bit and try again
+                    setTimeout(checkAndShow, 100);
+                }
+            };
+            checkAndShow();
+        }
+    }
+    
+    saveCurrentFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        const tagFilter = document.getElementById('tagFilter');
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        
+        return {
+            search: searchInput ? searchInput.value : '',
+            difficulty: difficultyFilter ? difficultyFilter.value : '',
+            tag: tagFilter ? tagFilter.value : '',
+            mealTimes: mealTimeFilter ? Array.from(mealTimeFilter.selectedOptions).map(option => option.value) : []
+        };
+    }
+    
+    restoreFilters(filters) {
+        const searchInput = document.getElementById('searchInput');
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        const tagFilter = document.getElementById('tagFilter');
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        
+        if (searchInput) searchInput.value = filters.search || '';
+        if (difficultyFilter) difficultyFilter.value = filters.difficulty || '';
+        if (tagFilter) tagFilter.value = filters.tag || '';
+        if (mealTimeFilter && filters.mealTimes) {
+            Array.from(mealTimeFilter.options).forEach(option => {
+                option.selected = filters.mealTimes.includes(option.value);
+            });
+        }
+        
+        // Reload recipes with restored filters
+        this.searchRecipes();
     }
 
     bindEvents() {
@@ -46,6 +211,9 @@ class RecipeManager {
         });
         safeAddEventListener('difficultyFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('tagFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('mealTimeFilter', 'change', () => this.searchRecipes());
+        safeAddEventListener('clearFiltersBtn', 'click', () => this.clearFilters());
+
 
         // Dynamic form elements
         safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
@@ -72,11 +240,27 @@ class RecipeManager {
         try {
             this.showLoading(true);
             const response = await fetch('/api/recipes/');
+            
+            // Check if response is ok (status 200-299)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Server error: ${response.status}`);
+            }
+            
             this.recipes = await response.json();
+            
+            // Ensure recipes is an array
+            if (!Array.isArray(this.recipes)) {
+                throw new Error('Invalid response format: expected array of recipes');
+            }
+            
             this.renderRecipes();
         } catch (error) {
             console.error('Error loading recipes:', error);
-            this.showError('Failed to load recipes');
+            this.showError(`Failed to load recipes: ${error.message}`);
+            // Set recipes to empty array to prevent further errors
+            this.recipes = [];
+            this.renderRecipes();
         } finally {
             this.showLoading(false);
         }
@@ -92,6 +276,16 @@ class RecipeManager {
         }
     }
 
+    async loadMealTimes() {
+        try {
+            const response = await fetch('/api/recipes/meal-times/all');
+            this.mealTimes = await response.json();
+            this.renderMealTimeFilter();
+        } catch (error) {
+            console.error('Error loading meal times:', error);
+        }
+    }
+
     async searchRecipes() {
         try {
             this.showLoading(true);
@@ -99,22 +293,43 @@ class RecipeManager {
             const searchElement = document.getElementById('searchInput');
             const difficultyElement = document.getElementById('difficultyFilter');
             const tagElement = document.getElementById('tagFilter');
+            const mealTimeElement = document.getElementById('mealTimeFilter');
+
             
             const search = searchElement ? searchElement.value : '';
             const difficulty = difficultyElement ? difficultyElement.value : '';
             const tag = tagElement ? tagElement.value : '';
+            const mealTimes = mealTimeElement ? Array.from(mealTimeElement.selectedOptions).map(option => option.value).filter(v => v) : [];
+
             
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (difficulty) params.append('difficulty', difficulty);
             if (tag) params.append('tags', tag);
+            if (mealTimes.length > 0) params.append('meal_times', mealTimes.join(','));
             
             const response = await fetch(`/api/recipes/?${params}`);
+            
+            // Check if response is ok (status 200-299)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Server error: ${response.status}`);
+            }
+            
             this.recipes = await response.json();
+            
+            // Ensure recipes is an array
+            if (!Array.isArray(this.recipes)) {
+                throw new Error('Invalid response format: expected array of recipes');
+            }
+            
             this.renderRecipes();
         } catch (error) {
             console.error('Error searching recipes:', error);
-            this.showError('Search failed');
+            this.showError(`Search failed: ${error.message}`);
+            // Set recipes to empty array to prevent further errors
+            this.recipes = [];
+            this.renderRecipes();
         } finally {
             this.showLoading(false);
         }
@@ -172,6 +387,12 @@ class RecipeManager {
                                 ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
                             </div>
                         ` : ''}
+                        ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                            <div class="recipe-meal-times">
+                                ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+                            </div>
+                        ` : ''}
+
                         ${recipe.source && recipe.source.url ? `
                             <div class="recipe-source">
                                 <i class="fas fa-link"></i> 
@@ -196,7 +417,45 @@ class RecipeManager {
         }
     }
 
-    showRecipeDetail(recipe) {
+    renderMealTimeFilter() {
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        const allMealTimes = ['breakfast', 'lunch', 'dinner', 'snack', 'brunch', 'dessert'];
+        if (mealTimeFilter) {
+            mealTimeFilter.innerHTML = allMealTimes.map(mealTime => 
+                `<option value="${mealTime}">${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)}</option>`
+            ).join('');
+        } else {
+            console.warn('mealTimeFilter element not found. Cannot render meal time filter options.');
+        }
+    }
+
+    clearFilters() {
+        // Clear search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        
+        // Reset difficulty filter
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        if (difficultyFilter) difficultyFilter.value = '';
+        
+        // Reset tag filter
+        const tagFilter = document.getElementById('tagFilter');
+        if (tagFilter) tagFilter.value = '';
+        
+        // Reset meal time filter (multiselect)
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        if (mealTimeFilter) {
+            Array.from(mealTimeFilter.options).forEach(option => {
+                option.selected = false;
+            });
+        }
+        
+        // Reload all recipes
+        this.loadRecipes();
+
+    }
+
+    showRecipeDetail(recipe, updateUrl = true) {
         this.currentRecipe = recipe;
         const modal = document.getElementById('recipeDetailModal');
         const title = document.getElementById('detailTitle');
@@ -207,9 +466,24 @@ class RecipeManager {
             return;
         }
         
+        // Save current filters before showing recipe
+        if (updateUrl) {
+            this.savedFilters = this.saveCurrentFilters();
+        }
+        
         title.textContent = recipe.title;
         content.innerHTML = this.renderRecipeDetail(recipe);
         modal.style.display = 'block';
+        
+        // Update URL to include recipe ID
+        if (updateUrl && recipe.id) {
+            const newUrl = `${window.location.pathname}${window.location.search}#recipe-${recipe.id}`;
+            history.pushState(
+                { recipeId: recipe.id }, 
+                `${recipe.title} - Recipe Management`, 
+                newUrl
+            );
+        }
     }
 
     renderRecipeDetail(recipe) {
@@ -273,6 +547,15 @@ class RecipeManager {
                     <h3><i class="fas fa-tags"></i> Tags</h3>
                     <div class="detail-tags">
                         ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                <div class="detail-section">
+                    <h3><i class="fas fa-clock"></i> Meal Times</h3>
+                    <div class="detail-tags">
+                        ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
                     </div>
                 </div>
             ` : ''}
@@ -352,6 +635,7 @@ class RecipeManager {
                 this.closeModal();
                 this.loadRecipes();
                 this.loadTags();
+                this.loadMealTimes();
                 this.showSuccess(this.editingRecipe ? 'Recipe updated successfully!' : 'Recipe created successfully!');
             } else {
                 const error = await response.json();
@@ -377,6 +661,10 @@ class RecipeManager {
         // Tags
         const tagsStr = formData.get('tags');
         recipe.tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        
+        // Meal times
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox:checked');
+        recipe.meal_times = Array.from(mealTimeCheckboxes).map(checkbox => checkbox.value);
         
         // Source
         recipe.source = {
@@ -441,6 +729,12 @@ class RecipeManager {
         document.getElementById('servings').value = recipe.servings || '';
         document.getElementById('difficulty').value = recipe.difficulty || '';
         document.getElementById('tags').value = (recipe.tags || []).join(', ');
+        
+        // Meal times - check the appropriate checkboxes
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
+        mealTimeCheckboxes.forEach(checkbox => {
+            checkbox.checked = (recipe.meal_times || []).includes(checkbox.value);
+        });
         
         // Source
         document.getElementById('sourceType').value = recipe.source?.type || 'manual';
@@ -532,9 +826,12 @@ class RecipeManager {
         const row = document.createElement('div');
         row.className = 'ingredient-row';
         row.innerHTML = `
-            <input type="text" placeholder="Ingredient name" class="ingredient-name" value="${ingredient?.name || ''}">
-            <input type="text" placeholder="Amount" class="ingredient-amount" value="${ingredient?.amount || ''}">
-            <input type="text" placeholder="Unit (optional)" class="ingredient-unit" value="${ingredient?.unit || ''}">
+            <input type="text" placeholder="Ingredient name" class="ingredient-name" value="${ingredient?.name || ''}" 
+                   autocomplete="off" autocapitalize="words" spellcheck="true">
+            <input type="text" placeholder="Amount" class="ingredient-amount" value="${ingredient?.amount || ''}" 
+                   autocomplete="off" spellcheck="false">
+            <input type="text" placeholder="Unit (optional)" class="ingredient-unit" value="${ingredient?.unit || ''}" 
+                   autocomplete="off" spellcheck="false">
             <button type="button" class="btn btn-danger remove-ingredient">
                 <i class="fas fa-trash"></i>
             </button>
@@ -554,7 +851,8 @@ class RecipeManager {
         const row = document.createElement('div');
         row.className = 'instruction-row';
         row.innerHTML = `
-            <textarea placeholder="Step ${container.children.length + 1}" class="instruction-text" rows="2">${instruction || ''}</textarea>
+            <textarea placeholder="Step ${container.children.length + 1}" class="instruction-text" rows="2" 
+                      autocapitalize="sentences" spellcheck="true">${instruction || ''}</textarea>
             <button type="button" class="btn btn-danger remove-instruction">
                 <i class="fas fa-trash"></i>
             </button>
@@ -596,6 +894,13 @@ class RecipeManager {
         
         // Clear image previews
         this.clearImagePreviews();
+
+        // Reset meal time checkboxes
+        const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
+        mealTimeCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
         
         this.addIngredientRow();
         this.addInstructionRow();
@@ -608,12 +913,24 @@ class RecipeManager {
         }
     }
 
-    closeDetailModal() {
+    closeDetailModal(updateUrl = true) {
         const modal = document.getElementById('recipeDetailModal');
         if (modal) {
             modal.style.display = 'none';
         }
         this.currentRecipe = null;
+        
+        // Update URL to remove recipe hash
+        if (updateUrl) {
+            const newUrl = `${window.location.pathname}${window.location.search}`;
+            history.pushState(null, 'Recipe Management', newUrl);
+            
+            // Restore saved filters if they exist
+            if (this.savedFilters) {
+                this.restoreFilters(this.savedFilters);
+                this.savedFilters = null;
+            }
+        }
     }
 
     showImportModal() {
