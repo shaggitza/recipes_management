@@ -10,6 +10,13 @@ jinja2==3.1.2
 aiofiles==23.2.1
 python-dotenv==1.0.0
 
+# AI and Web Scraping
+beautifulsoup4==4.13.4
+requests==2.31.0
+playwright==1.54.0
+# langfun[vertexai]==0.0.6  # TODO: Add when available
+# pyglove==0.4.6  # TODO: Add when available
+
 # Testing
 pytest==7.4.3
 pytest-asyncio==0.21.1

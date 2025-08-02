@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import connect_to_mongo, close_mongo_connection
 from app.routers import recipes
+from app.routers import ai_import
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +32,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Include routers
 app.include_router(recipes.router)
+app.include_router(ai_import.router)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
