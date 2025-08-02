@@ -15,11 +15,16 @@ class Ingredient(pg.Object):
 class ExtractedImage(pg.Object):
     """Extracted image with metadata."""
 
-    url: str
+    url: str = ""
     alt_text: Optional[str] = None
     title: Optional[str] = None
     relevance_score: Optional[float] = None
     is_primary: bool = False
+    # Alternative field names for backward compatibility  
+    src: Optional[str] = None
+    alt: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
 
 
 class ScrapedData(pg.Object):
@@ -31,6 +36,7 @@ class ScrapedData(pg.Object):
     status_code: int = 200
     images: List[ExtractedImage] = []
     metadata: Optional[dict] = None
+    structured_data: List[dict] = []
 
 
 class RecipeExtraction(pg.Object):
