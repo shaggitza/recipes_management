@@ -36,3 +36,5 @@ class RecipeExtraction(pg.Object):
     tags: List[str] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
+    extraction_method: Optional[str] = None
+    cuisine: Optional[str] = None
