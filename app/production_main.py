@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production startup script that tries MongoDB first, falls back to mock database.
+Production startup script with MongoDB database.
 """
 
 import os
@@ -27,15 +27,10 @@ setup_logging(
 
 logger = logging.getLogger("app.production")
 
-# Try to import MongoDB version first
-try:
-    from app.mongodb_database import connect_to_mongo, close_mongo_connection
-    logger.info("Using MongoDB database with Beanie ODM")
-    DATABASE_TYPE = "mongodb"
-except ImportError:
-    from app.mock_database import connect_to_mongo, close_mongo_connection
-    logger.warning("Using mock database (in-memory) - MongoDB not available")
-    DATABASE_TYPE = "mock"
+# Import MongoDB database connection
+from app.mongodb_database import connect_to_mongo, close_mongo_connection
+logger.info("Using MongoDB database with Beanie ODM")
+DATABASE_TYPE = "mongodb"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,19 +51,7 @@ async def lifespan(app: FastAPI):
         logger.error("Database connection failed", exc_info=e, extra={
             "extra_data": {"database_type": DATABASE_TYPE}
         })
-        
-        if DATABASE_TYPE == "mongodb":
-            logger.warning("Falling back to mock database")
-            try:
-                # Import and use mock database as fallback
-                from app.mock_database import connect_to_mongo as mock_connect
-                await mock_connect()
-                logger.info("Mock database initialized successfully")
-                global DATABASE_TYPE
-                DATABASE_TYPE = "mock_fallback"
-            except Exception as fallback_error:
-                logger.critical("Mock database fallback also failed", exc_info=fallback_error)
-                raise
+        raise
     
     logger.info("Production application startup completed")
     yield

@@ -1,13 +1,14 @@
 import pytest
+import pytest_asyncio
 import asyncio
 import os
 from unittest.mock import Mock, AsyncMock
 from fastapi.testclient import TestClient
-from motor.motor_asyncio import AsyncIOMotorClient
+import mongomock_motor
 from beanie import init_beanie
 
 # Set test environment variables early
-os.environ.setdefault("MONGODB_URL", "mongodb://admin:password@localhost:27017/test_recipes_db?authSource=admin")
+os.environ.setdefault("MONGODB_URL", "mongodb://localhost:27017/test_recipes_db")
 os.environ.setdefault("DATABASE_NAME", "test_recipes_db")
 os.environ.setdefault("LOG_LEVEL", "DEBUG")
 os.environ.setdefault("USE_STRUCTURED_LOGGING", "false")  # Use simple logging in tests
@@ -17,10 +18,6 @@ from app.main import app
 from app.database import db
 from app.config import settings
 from app.models.recipe import Recipe
-
-# Test database configuration
-TEST_DATABASE_URL = settings.mongodb_url
-TEST_DATABASE_NAME = settings.database_name
 
 
 def pytest_configure(config):
@@ -59,30 +56,28 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def test_db():
-    """Set up test database with Beanie."""
+    """Set up test database with mongomock."""
     try:
-        # Connect to test database
-        client = AsyncIOMotorClient(TEST_DATABASE_URL)
-        database = client[TEST_DATABASE_NAME]
+        # Use mongomock for testing
+        client = mongomock_motor.AsyncMongoMockClient()
+        database = client[settings.database_name]
         
         # Set test database
         db.client = client
         db.database = database
         
-        # Initialize Beanie for testing
+        # Initialize Beanie for testing with mongomock
         await init_beanie(database=database, document_models=[Recipe])
         
         yield database
         
-        # Clean up
-        await client.drop_database(TEST_DATABASE_NAME)
+        # Clean up - mongomock doesn't need explicit cleanup
         client.close()
         
     except Exception as e:
-        # If MongoDB is not available, skip database tests
-        pytest.skip(f"MongoDB not available for testing: {e}")
+        pytest.skip(f"Failed to setup mongomock: {e}")
 
 
 @pytest.fixture
@@ -91,13 +86,16 @@ def client():
     return TestClient(app)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def clean_db(test_db):
     """Clean test database before each test."""
     if test_db is None:
         pytest.skip("Database not available")
+    # Clear all recipes before each test
     await Recipe.delete_all()
     yield test_db
+    # Clear all recipes after each test as well
+    await Recipe.delete_all()
 
 
 @pytest.fixture
