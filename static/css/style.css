@@ -216,6 +216,12 @@ body {
     font-weight: 500;
 }
 
+.meal-time-tag {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
 .recipe-source {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -387,6 +393,56 @@ body {
     margin-top: 2rem;
     padding-top: 1rem;
     border-top: 1px solid #e9ecef;
+}
+
+/* Meal Time Checkboxes */
+.meal-times-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.meal-time-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.meal-time-option:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.meal-time-option.selected {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+}
+
+.meal-time-checkbox {
+    margin-right: 0.5rem;
+}
+
+/* Clear Filters Button */
+#clearFiltersBtn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+#clearFiltersBtn:hover {
+    background: #c82333;
 }
 
 /* Recipe Detail */

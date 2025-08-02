@@ -48,7 +48,8 @@ class RecipeService:
         limit: int = 10,
         search: Optional[str] = None,
         tags: Optional[str] = None,
-        difficulty: Optional[str] = None
+        difficulty: Optional[str] = None,
+        meal_times: Optional[str] = None
     ) -> List[Recipe]:
         """Get recipes with filtering, search, and pagination"""
         # Validate parameters
@@ -71,6 +72,16 @@ class RecipeService:
             tag_list = [tag.strip().lower() for tag in tags.split(",") if tag.strip()]
             if tag_list:
                 filters["tags"] = tag_list
+        
+        if meal_times:
+            # Parse comma-separated meal times
+            meal_time_list = [meal_time.strip().lower() for meal_time in meal_times.split(",") if meal_time.strip()]
+            if meal_time_list:
+                # Validate meal times
+                valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+                validated_meal_times = [mt for mt in meal_time_list if mt in valid_meal_times]
+                if validated_meal_times:
+                    filters["meal_times"] = validated_meal_times
         
         if search:
             filters["search"] = search.strip()
@@ -157,10 +168,18 @@ class RecipeService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve tags: {str(e)}")
     
+    async def get_all_meal_times(self) -> List[str]:
+        """Get all unique meal times"""
+        try:
+            return await self.repository.get_all_meal_times()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve meal times: {str(e)}")
+    
     async def get_recipe_count(
         self,
         difficulty: Optional[str] = None,
-        tags: Optional[str] = None
+        tags: Optional[str] = None,
+        meal_times: Optional[str] = None
     ) -> int:
         """Get count of recipes with optional filters"""
         filters = {}
@@ -174,6 +193,14 @@ class RecipeService:
             if tag_list:
                 filters["tags"] = tag_list
         
+        if meal_times:
+            meal_time_list = [meal_time.strip().lower() for meal_time in meal_times.split(",") if meal_time.strip()]
+            if meal_time_list:
+                valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+                validated_meal_times = [mt for mt in meal_time_list if mt in valid_meal_times]
+                if validated_meal_times:
+                    filters["meal_times"] = validated_meal_times
+        
         try:
             return await self.repository.count(filters)
         except Exception as e:
@@ -186,6 +213,18 @@ class RecipeService:
         
         try:
             return await self.repository.get_recipes_by_difficulty(difficulty)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve recipes: {str(e)}")
+    
+    async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
+        """Get recipes filtered by meal times with validation"""
+        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        invalid_meal_times = [mt for mt in meal_times if mt not in valid_meal_times]
+        if invalid_meal_times:
+            raise HTTPException(status_code=400, detail=f"Invalid meal times: {invalid_meal_times}")
+        
+        try:
+            return await self.repository.get_recipes_by_meal_times(meal_times)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve recipes: {str(e)}")
     

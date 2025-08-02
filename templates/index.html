@@ -34,6 +34,10 @@
                 <select id="tagFilter" class="filter-select">
                     <option value="">All Tags</option>
                 </select>
+                <select id="mealTimeFilter" class="filter-select" multiple>
+                    <!-- Meal time options will be populated by JavaScript -->
+                </select>
+                <button id="clearFiltersBtn" class="btn btn-danger">Clear Filters</button>
             </div>
         </nav>
 
@@ -99,6 +103,36 @@
                 <div class="form-group">
                     <label for="tags">Tags (comma-separated)</label>
                     <input type="text" id="tags" name="tags" placeholder="e.g., vegetarian, quick, dinner">
+                </div>
+
+                <div class="form-group">
+                    <label>Meal Times</label>
+                    <div class="meal-times-grid">
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="breakfast">
+                            Breakfast
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="lunch">
+                            Lunch
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="dinner">
+                            Dinner
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="snack">
+                            Snack
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="brunch">
+                            Brunch
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="dessert">
+                            Dessert
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
