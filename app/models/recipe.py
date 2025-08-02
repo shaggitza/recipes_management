@@ -1,8 +1,19 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any, Literal
+from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from beanie import Document, before_event, Insert, Update
 from pymongo import IndexModel, TEXT
+
+
+class MealTime(str, Enum):
+    """Enumeration of valid meal times."""
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch" 
+    DINNER = "dinner"
+    SNACK = "snack"
+    BRUNCH = "brunch"
+    DESSERT = "dessert"
 
 
 class Ingredient(BaseModel):
@@ -36,7 +47,7 @@ class Recipe(Document):
     # Classification
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
-    meal_times: List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]] = Field(default_factory=list, max_length=6)
+    meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
     
     # Source and media
     source: Source = Field(default_factory=Source)
@@ -51,16 +62,20 @@ class Recipe(Document):
 
     @field_validator('meal_times')
     @classmethod
-    def validate_meal_times(cls, v: List[str]) -> List[str]:
+    def validate_meal_times(cls, v: List[MealTime]) -> List[MealTime]:
         """Validate and normalize meal times"""
         if not v:
             return []
-        # Remove duplicates and ensure valid meal times
-        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
-        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
-        if len(normalized) > 6:
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_meal_times = []
+        for meal_time in v:
+            if meal_time not in seen:
+                seen.add(meal_time)
+                unique_meal_times.append(meal_time)
+        if len(unique_meal_times) > 6:
             raise ValueError('Maximum 6 meal times allowed')
-        return normalized
+        return unique_meal_times
 
     @field_validator('tags')
     @classmethod
@@ -123,22 +138,27 @@ class RecipeCreate(BaseModel):
     servings: Optional[int] = Field(None, ge=1, le=100)
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
-    meal_times: List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]] = Field(default_factory=list, max_length=6)
+    meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list, max_length=10)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator('meal_times')
     @classmethod
-    def validate_meal_times(cls, v: List[str]) -> List[str]:
+    def validate_meal_times(cls, v: List[MealTime]) -> List[MealTime]:
         """Validate and normalize meal times"""
         if not v:
             return []
-        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
-        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
-        if len(normalized) > 6:
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_meal_times = []
+        for meal_time in v:
+            if meal_time not in seen:
+                seen.add(meal_time)
+                unique_meal_times.append(meal_time)
+        if len(unique_meal_times) > 6:
             raise ValueError('Maximum 6 meal times allowed')
-        return normalized
+        return unique_meal_times
 
     @field_validator('tags')
     @classmethod
@@ -165,24 +185,29 @@ class RecipeUpdate(BaseModel):
     servings: Optional[int] = Field(None, ge=1, le=100)
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: Optional[List[str]] = Field(None, max_length=20)
-    meal_times: Optional[List[Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]]] = Field(None, max_length=6)
+    meal_times: Optional[List[MealTime]] = Field(None, max_length=6)
     source: Optional[Source] = None
     images: Optional[List[str]] = Field(None, max_length=10)
     metadata: Optional[Dict[str, Any]] = None
 
     @field_validator('meal_times')
     @classmethod
-    def validate_meal_times(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_meal_times(cls, v: Optional[List[MealTime]]) -> Optional[List[MealTime]]:
         """Validate and normalize meal times"""
         if v is None:
             return None
         if not v:
             return []
-        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
-        normalized = list(set(meal_time.strip().lower() for meal_time in v if meal_time.strip().lower() in valid_meal_times))
-        if len(normalized) > 6:
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_meal_times = []
+        for meal_time in v:
+            if meal_time not in seen:
+                seen.add(meal_time)
+                unique_meal_times.append(meal_time)
+        if len(unique_meal_times) > 6:
             raise ValueError('Maximum 6 meal times allowed')
-        return normalized
+        return unique_meal_times
 
     @field_validator('tags')
     @classmethod

@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Literal
 from datetime import datetime, timezone
 
-from app.models.recipe import RecipeCreate, Ingredient, Source
+from app.models.recipe import RecipeCreate, Ingredient, Source, MealTime
 
 logger = logging.getLogger(__name__)
 
@@ -264,19 +264,34 @@ class RecipeTransformer:
         unique_tags = list(dict.fromkeys(cleaned_tags))  # Preserve order
         return unique_tags[:20]  # Limit to 20 tags
 
-    def _clean_meal_times(self, meal_times: list[str]) -> list[str]:
+    def _clean_meal_times(self, meal_times: list) -> list[MealTime]:
         """Clean and validate meal_times."""
-        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
         cleaned_meal_times = []
         
         for meal_time in meal_times:
             if meal_time:
-                meal_time = meal_time.strip().lower()
-                if meal_time in valid_meal_times:
-                    cleaned_meal_times.append(meal_time)
+                # Handle both string and MealTime enum inputs
+                if isinstance(meal_time, MealTime):
+                    meal_time_str = meal_time.value
+                else:
+                    meal_time_str = str(meal_time).strip().lower()
+                
+                # Try to convert to MealTime enum
+                try:
+                    enum_value = MealTime(meal_time_str)
+                    cleaned_meal_times.append(enum_value)
+                except ValueError:
+                    # Skip invalid meal times
+                    continue
         
         # Remove duplicates while preserving order
-        unique_meal_times = list(dict.fromkeys(cleaned_meal_times))
+        seen = set()
+        unique_meal_times = []
+        for meal_time in cleaned_meal_times:
+            if meal_time not in seen:
+                seen.add(meal_time)
+                unique_meal_times.append(meal_time)
+        
         return unique_meal_times[:6]  # Limit to 6 meal times
 
     def _extract_domain_name(self, url: Optional[str]) -> Optional[str]:

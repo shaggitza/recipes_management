@@ -3,6 +3,9 @@
 from typing import List, Optional
 import pyglove as pg
 
+# Import MealTime from the main models for consistency
+from app.models.recipe import MealTime
+
 
 class Ingredient(pg.Object):
     """Recipe ingredient with standardized structure."""
@@ -34,7 +37,7 @@ class RecipeExtraction(pg.Object):
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     tags: List[str] = []
-    meal_times: List[str] = []
+    meal_times: List[MealTime] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
 
