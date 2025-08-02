@@ -46,6 +46,7 @@ class RecipeManager {
         safeAddEventListener('mealTimeFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('clearFiltersBtn', 'click', () => this.clearFilters());
 
+
         // Dynamic form elements
         safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
         safeAddEventListener('addInstruction', 'click', () => this.addInstructionRow());
@@ -124,11 +125,13 @@ class RecipeManager {
             const difficultyElement = document.getElementById('difficultyFilter');
             const tagElement = document.getElementById('tagFilter');
             const mealTimeElement = document.getElementById('mealTimeFilter');
+
             
             const search = searchElement ? searchElement.value : '';
             const difficulty = difficultyElement ? difficultyElement.value : '';
             const tag = tagElement ? tagElement.value : '';
             const mealTimes = mealTimeElement ? Array.from(mealTimeElement.selectedOptions).map(option => option.value).filter(v => v) : [];
+
             
             const params = new URLSearchParams();
             if (search) params.append('search', search);
@@ -220,6 +223,7 @@ class RecipeManager {
                                 ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
                             </div>
                         ` : ''}
+
                         ${recipe.source && recipe.source.url ? `
                             <div class="recipe-source">
                                 <i class="fas fa-link"></i> 
@@ -279,6 +283,7 @@ class RecipeManager {
         
         // Reload all recipes
         this.loadRecipes();
+
     }
 
     showRecipeDetail(recipe) {
@@ -701,12 +706,13 @@ class RecipeManager {
         
         // Clear image previews
         this.clearImagePreviews();
-        
+
         // Reset meal time checkboxes
         const mealTimeCheckboxes = document.querySelectorAll('.meal-time-checkbox');
         mealTimeCheckboxes.forEach(checkbox => {
             checkbox.checked = false;
         });
+
         
         this.addIngredientRow();
         this.addInstructionRow();
