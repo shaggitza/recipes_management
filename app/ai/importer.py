@@ -201,7 +201,6 @@ class RecipeImporter:
                 error=f"Extraction failed: {str(e)}",
                 source_url=url
             )
-            )
 
     async def _transform_with_retry(
         self, 
