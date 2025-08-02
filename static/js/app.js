@@ -193,12 +193,16 @@ class RecipeManager {
 
         // Modal controls
         safeAddEventListener('addRecipeBtn', 'click', () => this.showAddModal());
+        safeAddEventListener('importRecipeBtn', 'click', () => this.showImportModal());
         safeAddEventListener('closeModal', 'click', () => this.closeModal());
         safeAddEventListener('closeDetailModal', 'click', () => this.closeDetailModal());
+        safeAddEventListener('closeImportModal', 'click', () => this.closeImportModal());
         safeAddEventListener('cancelBtn', 'click', () => this.closeModal());
+        safeAddEventListener('cancelImportBtn', 'click', () => this.closeImportModal());
 
         // Form submission
         safeAddEventListener('recipeForm', 'submit', (e) => this.handleSubmit(e));
+        safeAddEventListener('importForm', 'submit', (e) => this.handleImportSubmit(e));
 
         // Search and filters
         safeAddEventListener('searchBtn', 'click', () => this.searchRecipes());
@@ -227,6 +231,7 @@ class RecipeManager {
             if (e.target.classList.contains('modal')) {
                 this.closeModal();
                 this.closeDetailModal();
+                this.closeImportModal();
             }
         });
     }
@@ -925,6 +930,166 @@ class RecipeManager {
                 this.restoreFilters(this.savedFilters);
                 this.savedFilters = null;
             }
+        }
+    }
+
+    showImportModal() {
+        this.resetImportForm();
+        document.getElementById('importModal').style.display = 'block';
+    }
+
+    closeImportModal() {
+        const modal = document.getElementById('importModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        this.resetImportForm();
+    }
+
+    resetImportForm() {
+        const form = document.getElementById('importForm');
+        if (form) {
+            form.reset();
+        }
+        
+        // Hide progress and result sections
+        const progress = document.getElementById('importProgress');
+        const result = document.getElementById('importResult');
+        if (progress) progress.style.display = 'none';
+        if (result) result.style.display = 'none';
+        
+        // Reset button state
+        const importBtn = document.getElementById('importBtn');
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i class="fas fa-download"></i> Import Recipe';
+        }
+    }
+
+    async handleImportSubmit(e) {
+        e.preventDefault();
+        
+        const url = document.getElementById('importUrl').value.trim();
+        const tags = document.getElementById('importTags').value.trim();
+        
+        if (!url) {
+            this.showError('Please enter a recipe URL');
+            return;
+        }
+
+        try {
+            // Show progress
+            const progress = document.getElementById('importProgress');
+            const result = document.getElementById('importResult');
+            const importBtn = document.getElementById('importBtn');
+            
+            if (progress) progress.style.display = 'block';
+            if (result) result.style.display = 'none';
+            if (importBtn) {
+                importBtn.disabled = true;
+                importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
+            }
+
+            // Prepare request data
+            const requestData = {
+                url: url
+            };
+
+            // Add tags to metadata if provided
+            if (tags) {
+                requestData.metadata = {
+                    additional_tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+                };
+            }
+
+            // Make import request
+            const response = await fetch('/ai/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+
+            // Hide progress
+            if (progress) progress.style.display = 'none';
+
+            // Show result
+            if (result) {
+                result.style.display = 'block';
+                this.displayImportResult(data);
+            }
+
+            // If successful, refresh the recipes list
+            if (data.success) {
+                await this.loadRecipes();
+                
+                // Auto-close modal after 3 seconds on success
+                setTimeout(() => {
+                    this.closeImportModal();
+                }, 3000);
+            }
+
+        } catch (error) {
+            console.error('Import error:', error);
+            
+            // Hide progress
+            const progress = document.getElementById('importProgress');
+            if (progress) progress.style.display = 'none';
+            
+            // Show error result
+            const result = document.getElementById('importResult');
+            if (result) {
+                result.style.display = 'block';
+                result.className = 'import-result error';
+                result.innerHTML = `
+                    <h4><i class="fas fa-exclamation-circle"></i> Import Failed</h4>
+                    <p>An error occurred while importing the recipe: ${error.message || 'Unknown error'}</p>
+                    <p>Please check the URL and try again.</p>
+                `;
+            }
+        } finally {
+            // Reset button state
+            const importBtn = document.getElementById('importBtn');
+            if (importBtn) {
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="fas fa-download"></i> Import Recipe';
+            }
+        }
+    }
+
+    displayImportResult(data) {
+        const result = document.getElementById('importResult');
+        if (!result) return;
+
+        if (data.success) {
+            result.className = 'import-result success';
+            result.innerHTML = `
+                <h4><i class="fas fa-check-circle"></i> Import Successful!</h4>
+                <p>Recipe imported successfully from: <a href="${data.url}" target="_blank">${data.url}</a></p>
+                <p>Recipe ID: ${data.recipe_id}</p>
+                <p>Import completed in ${data.attempts} attempt(s)</p>
+                ${data.extraction_metadata ? `
+                    <div class="recipe-preview">
+                        <h5>Recipe Preview:</h5>
+                        ${data.extraction_metadata.extracted_title ? `<p><strong>Title:</strong> ${data.extraction_metadata.extracted_title}</p>` : ''}
+                        ${data.extraction_metadata.method_used ? `<p><strong>Extraction Method:</strong> ${data.extraction_metadata.method_used}</p>` : ''}
+                        ${data.extraction_metadata.language_detected ? `<p><strong>Language:</strong> ${data.extraction_metadata.language_detected}</p>` : ''}
+                    </div>
+                ` : ''}
+                <p><small>This modal will close automatically in 3 seconds...</small></p>
+            `;
+        } else {
+            result.className = 'import-result error';
+            result.innerHTML = `
+                <h4><i class="fas fa-exclamation-circle"></i> Import Failed</h4>
+                <p>Failed to import recipe from: <a href="${data.url}" target="_blank">${data.url}</a></p>
+                <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
+                <p>Attempts made: ${data.attempts}</p>
+                <p>Please check the URL and try again. Make sure the URL contains a valid recipe.</p>
+            `;
         }
     }
 

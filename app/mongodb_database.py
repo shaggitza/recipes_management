@@ -10,7 +10,7 @@ except ImportError:
     MONGODB_AVAILABLE = False
     AsyncIOMotorClient = None
     AsyncIOMotorDatabase = None
-    print("MongoDB dependencies not available. Using mock database.")
+    print("MongoDB dependencies not available. Install with: pip install motor pymongo beanie")
 
 from typing import Optional
 from app.config import settings

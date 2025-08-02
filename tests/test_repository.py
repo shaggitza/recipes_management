@@ -42,11 +42,14 @@ class TestRecipeRepository:
         )
     
     @pytest.fixture
-    def sample_recipe(self, sample_recipe_create) -> Recipe:
+    async def sample_recipe(self, sample_recipe_create, clean_db) -> Recipe:
         """Create sample recipe document for testing."""
-        recipe = Recipe(**sample_recipe_create.model_dump())
-        recipe.id = PydanticObjectId()
-        return recipe
+        # Create the recipe using the actual Beanie model with the test database
+        recipe_data = sample_recipe_create.model_dump()
+        recipe = Recipe(**recipe_data)
+        # Save it to the test database
+        saved_recipe = await recipe.insert()
+        return saved_recipe
     
     @pytest.mark.asyncio
     async def test_create_recipe(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
