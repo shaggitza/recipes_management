@@ -60,7 +60,7 @@ jobs:
         
     - name: Run mypy type checking
       run: |
-        mypy app/ --ignore-missing-imports --no-strict-optional --disable-error-code=union-attr,arg-type,assignment,attr-defined,misc,operator,type-var,no-redef || echo "MyPy check completed with issues - non-blocking"
+        mypy app/ --ignore-missing-imports --no-strict-optional || echo "MyPy check completed with issues - non-blocking"
         
     - name: Run tests
       run: |
