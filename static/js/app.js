@@ -5,6 +5,7 @@ class RecipeManager {
         this.currentRecipe = null;
         this.editingRecipe = null;
         this.uploadedImages = []; // Track uploaded image URLs
+        this.savedFilters = null; // Store filters when navigating to recipe
         
         this.init();
     }
@@ -15,6 +16,7 @@ class RecipeManager {
         this.loadTags();
         this.loadMealTimes();
         this.initMobileFeatures();
+        this.initUrlHandling();
     }
 
     initMobileFeatures() {
@@ -33,19 +35,27 @@ class RecipeManager {
         const filterContent = document.getElementById('filterContent');
         
         if (filterToggle && filterContent) {
+            // Add click handler for mobile filter toggle
             filterToggle.addEventListener('click', () => {
+                console.log('Filter toggle clicked'); // Debug log
+                
                 const isExpanded = filterContent.classList.contains('expanded');
+                console.log('Current expanded state:', isExpanded); // Debug log
+                
                 filterContent.classList.toggle('expanded');
                 filterToggle.classList.toggle('active');
                 
-                // Update button text
-                const icon = filterToggle.querySelector('i');
+                // Update button text and icon
                 if (isExpanded) {
-                    icon.className = 'fas fa-filter';
+                    filterToggle.innerHTML = '<i class="fas fa-filter"></i> Filters';
                 } else {
-                    icon.className = 'fas fa-filter-circle-xmark';
+                    filterToggle.innerHTML = '<i class="fas fa-times"></i> Hide Filters';
                 }
+                
+                console.log('New expanded state:', filterContent.classList.contains('expanded')); // Debug log
             });
+        } else {
+            console.warn('Filter toggle or content not found');
         }
     }
     
@@ -91,6 +101,84 @@ class RecipeManager {
             this.checkMobileView();
         });
     }
+    
+    initUrlHandling() {
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.recipeId) {
+                // Going back to a recipe
+                const recipe = this.recipes.find(r => r.id === event.state.recipeId);
+                if (recipe) {
+                    this.showRecipeDetail(recipe, false); // false = don't update URL again
+                }
+            } else {
+                // Going back to main list
+                this.closeDetailModal(false); // false = don't update URL again
+                // Restore saved filters if they exist
+                if (this.savedFilters) {
+                    this.restoreFilters(this.savedFilters);
+                    this.savedFilters = null;
+                }
+            }
+        });
+        
+        // Check for recipe ID in URL on page load
+        this.checkUrlForRecipe();
+    }
+    
+    checkUrlForRecipe() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hash = window.location.hash;
+        
+        // Check for recipe ID in hash (e.g., #recipe-123)
+        if (hash.startsWith('#recipe-')) {
+            const recipeId = hash.substring(8); // Remove '#recipe-' prefix
+            // Wait for recipes to load, then show the recipe
+            const checkAndShow = () => {
+                const recipe = this.recipes.find(r => r.id === recipeId);
+                if (recipe) {
+                    this.showRecipeDetail(recipe, false);
+                } else if (this.recipes.length === 0) {
+                    // Recipes not loaded yet, wait a bit and try again
+                    setTimeout(checkAndShow, 100);
+                }
+            };
+            checkAndShow();
+        }
+    }
+    
+    saveCurrentFilters() {
+        const searchInput = document.getElementById('searchInput');
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        const tagFilter = document.getElementById('tagFilter');
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        
+        return {
+            search: searchInput ? searchInput.value : '',
+            difficulty: difficultyFilter ? difficultyFilter.value : '',
+            tag: tagFilter ? tagFilter.value : '',
+            mealTimes: mealTimeFilter ? Array.from(mealTimeFilter.selectedOptions).map(option => option.value) : []
+        };
+    }
+    
+    restoreFilters(filters) {
+        const searchInput = document.getElementById('searchInput');
+        const difficultyFilter = document.getElementById('difficultyFilter');
+        const tagFilter = document.getElementById('tagFilter');
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        
+        if (searchInput) searchInput.value = filters.search || '';
+        if (difficultyFilter) difficultyFilter.value = filters.difficulty || '';
+        if (tagFilter) tagFilter.value = filters.tag || '';
+        if (mealTimeFilter && filters.mealTimes) {
+            Array.from(mealTimeFilter.options).forEach(option => {
+                option.selected = filters.mealTimes.includes(option.value);
+            });
+        }
+        
+        // Reload recipes with restored filters
+        this.searchRecipes();
+    }
 
     bindEvents() {
         // Helper function to safely add event listeners
@@ -121,7 +209,6 @@ class RecipeManager {
         safeAddEventListener('tagFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('mealTimeFilter', 'change', () => this.searchRecipes());
         safeAddEventListener('clearFiltersBtn', 'click', () => this.clearFilters());
-        safeAddEventListener('filterToggle', 'click', () => this.toggleMobileFilters());
 
 
         // Dynamic form elements
@@ -337,25 +424,6 @@ class RecipeManager {
         }
     }
 
-    toggleMobileFilters() {
-        const filterContent = document.getElementById('filterContent');
-        const filterToggle = document.getElementById('filterToggle');
-        
-        if (filterContent && filterToggle) {
-            const isExpanded = filterContent.classList.contains('expanded');
-            filterContent.classList.toggle('expanded');
-            filterToggle.classList.toggle('active');
-            
-            // Update button text and icon
-            const icon = filterToggle.querySelector('i');
-            if (isExpanded) {
-                filterToggle.innerHTML = '<i class="fas fa-filter"></i> Filters';
-            } else {
-                filterToggle.innerHTML = '<i class="fas fa-times"></i> Hide Filters';
-            }
-        }
-    }
-
     clearFilters() {
         // Clear search input
         const searchInput = document.getElementById('searchInput');
@@ -382,7 +450,7 @@ class RecipeManager {
 
     }
 
-    showRecipeDetail(recipe) {
+    showRecipeDetail(recipe, updateUrl = true) {
         this.currentRecipe = recipe;
         const modal = document.getElementById('recipeDetailModal');
         const title = document.getElementById('detailTitle');
@@ -393,9 +461,24 @@ class RecipeManager {
             return;
         }
         
+        // Save current filters before showing recipe
+        if (updateUrl) {
+            this.savedFilters = this.saveCurrentFilters();
+        }
+        
         title.textContent = recipe.title;
         content.innerHTML = this.renderRecipeDetail(recipe);
         modal.style.display = 'block';
+        
+        // Update URL to include recipe ID
+        if (updateUrl && recipe.id) {
+            const newUrl = `${window.location.pathname}${window.location.search}#recipe-${recipe.id}`;
+            history.pushState(
+                { recipeId: recipe.id }, 
+                `${recipe.title} - Recipe Management`, 
+                newUrl
+            );
+        }
     }
 
     renderRecipeDetail(recipe) {
@@ -825,12 +908,24 @@ class RecipeManager {
         }
     }
 
-    closeDetailModal() {
+    closeDetailModal(updateUrl = true) {
         const modal = document.getElementById('recipeDetailModal');
         if (modal) {
             modal.style.display = 'none';
         }
         this.currentRecipe = null;
+        
+        // Update URL to remove recipe hash
+        if (updateUrl) {
+            const newUrl = `${window.location.pathname}${window.location.search}`;
+            history.pushState(null, 'Recipe Management', newUrl);
+            
+            // Restore saved filters if they exist
+            if (this.savedFilters) {
+                this.restoreFilters(this.savedFilters);
+                this.savedFilters = null;
+            }
+        }
     }
 
     showLoading(show) {
