@@ -63,7 +63,7 @@ class RecipeService:
             raise HTTPException(status_code=400, detail="Invalid difficulty level")
         
         # Build filters
-        filters = {}
+        filters: Dict[str, Any] = {}
         if difficulty:
             filters["difficulty"] = difficulty
         
@@ -182,7 +182,7 @@ class RecipeService:
         meal_times: Optional[str] = None
     ) -> int:
         """Get count of recipes with optional filters"""
-        filters = {}
+        filters: Dict[str, Any] = {}
         if difficulty:
             if difficulty not in ["easy", "medium", "hard"]:
                 raise HTTPException(status_code=400, detail="Invalid difficulty level")

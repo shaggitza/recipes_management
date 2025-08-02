@@ -285,6 +285,7 @@ class RecipeImporter:
                 logger.error(f"Batch import task failed: {result}")
                 continue
             
+            # At this point, result is guaranteed to be a tuple
             url, import_result = result
             import_results[url] = import_result
         
