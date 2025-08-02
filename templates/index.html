@@ -18,6 +18,9 @@
             <button id="addRecipeBtn" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Add Recipe
             </button>
+            <button id="importRecipeBtn" class="btn btn-success">
+                <i class="fas fa-download"></i> Import Recipe
+            </button>
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Search recipes..." class="search-input">
                 <button id="searchBtn" class="btn btn-secondary">
@@ -183,6 +186,50 @@
             <div id="recipeDetailContent" class="recipe-detail">
                 <!-- Recipe details will be loaded here -->
             </div>
+        </div>
+    </div>
+
+    <!-- Import Recipe Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="importModalTitle">Import Recipe from URL</h2>
+                <button class="close" id="closeImportModal">&times;</button>
+            </div>
+            
+            <form id="importForm" class="import-form">
+                <div class="form-group">
+                    <label for="importUrl">Recipe URL *</label>
+                    <input type="url" id="importUrl" name="url" required 
+                           placeholder="https://example.com/recipe">
+                    <small class="help-text">Enter the URL of a recipe you want to import. Our AI will extract the recipe data automatically.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="importTags">Additional Tags (optional)</label>
+                    <input type="text" id="importTags" name="tags" 
+                           placeholder="e.g., imported, favorite">
+                    <small class="help-text">Add any additional tags to categorize this imported recipe.</small>
+                </div>
+
+                <div id="importProgress" class="import-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p class="progress-text">Importing recipe...</p>
+                </div>
+
+                <div id="importResult" class="import-result" style="display: none;">
+                    <!-- Import results will be shown here -->
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancelImportBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" id="importBtn" class="btn btn-success">
+                        <i class="fas fa-download"></i> Import Recipe
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
