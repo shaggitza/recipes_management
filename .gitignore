@@ -62,3 +62,4 @@ ehthumbs.db
 # Temporary files
 tmp/
 temp/
+static/images/*

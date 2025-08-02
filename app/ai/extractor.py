@@ -11,11 +11,17 @@ logger = logging.getLogger(__name__)
 
 try:
     import langfun as lf
-    from langfun.core import llm
+    from langfun.core import llms
     LANGFUN_AVAILABLE = True
-except ImportError:
+    logger.info("langfun imported successfully")
+except ImportError as e:
     LANGFUN_AVAILABLE = False
-    logger.warning("langfun not available, falling back to rule-based extraction")
+    logger.warning(
+        f"langfun not available, falling back to rule-based extraction. Error: {e}"
+    )
+except Exception as e:
+    LANGFUN_AVAILABLE = False
+    logger.error(f"Unexpected error importing langfun: {e}")
 
 from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult, ExtractedImage
 
@@ -45,11 +51,11 @@ class RecipeExtractor:
         try:
             # Configure OpenAI as the default language model
             lf.use_init_args(
-                llm.OpenAI(
+                llms.OpenAI(
                     api_key=self.api_key,
-                    model='gpt-4.1-mini',
+                    model="gpt-4",
                     temperature=0.1,  # Low temperature for consistent extraction
-                    max_tokens=2000
+                    max_tokens=2000,
                 )
             )
             logger.info("Langfun configured with OpenAI backend")
@@ -109,23 +115,18 @@ class RecipeExtractor:
             
         try:
             logger.info("Using langfun AI extraction with image analysis")
-            
+
             # Create the langfun extraction function
-            @lf.use_init_args(lf.LangFunc)
             def extract_recipe_data(content_text: str, image_list: List[dict]) -> Dict[str, Any]:
-                """Extract structured recipe data from web content and images.
-                
-                Args:
-                    content_text: The web page content containing the recipe
-                    image_list: List of images found on the page with metadata
-                    
-                Returns:
-                    A dictionary with the extracted recipe data in JSON format
-                """
-                return lf.query(
-                    self._create_langfun_prompt_with_images(content_text, image_list),
-                    lf.Json[Dict[str, Any]]  # Structured JSON output
+                """Extract structured recipe data from web content and images."""
+                prompt = self._create_langfun_prompt_with_images(
+                    content_text, image_list
                 )
+
+                # Use langfun query with dict schema for JSON output
+                result = lf.query(prompt, dict, default={})
+
+                return result if isinstance(result, dict) else {}
             
             # Execute the langfun extraction
             loop = asyncio.get_event_loop()

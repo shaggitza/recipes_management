@@ -333,7 +333,8 @@ class RecipeImporter:
 
     async def cleanup(self):
         """Clean up resources."""
-        await self.scraper.close()
+        if self.scraper and hasattr(self.scraper, 'close'):
+            self.scraper.close()
 
     async def __aenter__(self):
         """Async context manager entry."""

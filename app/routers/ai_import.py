@@ -248,23 +248,29 @@ async def test_extraction():
     try:
         # Test basic components
         from app.ai.scraper import RecipeScraper
-        from app.ai.extractor import RecipeExtractor
+        from app.ai.extractor import RecipeExtractor, LANGFUN_AVAILABLE
         from app.ai.transformer import RecipeTransformer
         
         # Initialize components
         scraper = RecipeScraper()
         extractor = RecipeExtractor()
         transformer = RecipeTransformer()
-        
+
+        # Determine AI backend status
+        ai_backend = "langfun" if extractor.use_ai else "rule_based_fallback"
+
         return {
             "status": "healthy",
             "components": {
                 "scraper": "initialized",
-                "extractor": "initialized", 
-                "transformer": "initialized"
+                "extractor": "initialized",
+                "transformer": "initialized",
             },
-            "ai_backend": "rule_based_fallback",  # Will be "langfun" when AI is available
-            "version": "1.0.0"
+            "ai_backend": ai_backend,
+            "langfun_available": LANGFUN_AVAILABLE,
+            "extractor_use_ai": extractor.use_ai,
+            "api_key_present": bool(extractor.api_key),
+            "version": "1.0.0",
         }
         
     except Exception as e:
