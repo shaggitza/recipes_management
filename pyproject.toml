@@ -1,0 +1,112 @@
+[tool:pytest]
+minversion = 6.0
+addopts = 
+    -ra
+    --strict-markers
+    --strict-config
+    --cov=app
+    --cov-report=term-missing:skip-covered
+    --cov-report=html:htmlcov
+    --cov-report=xml
+    --cov-fail-under=80
+    --tb=short
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+markers =
+    integration: marks tests as integration tests
+    ai: marks tests as AI functionality tests
+    slow: marks tests as slow running
+    database: marks tests as requiring database
+    unit: marks tests as unit tests
+filterwarnings =
+    ignore::DeprecationWarning
+    ignore::PendingDeprecationWarning
+    ignore::UserWarning:pydantic*
+    ignore::UserWarning:motor*
+asyncio_mode = auto
+
+[coverage:run]
+source = app
+omit = 
+    app/__init__.py
+    app/config.py
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */migrations/*
+    */venv/*
+    */env/*
+
+[coverage:report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+[coverage:html]
+directory = htmlcov
+
+[flake8]
+max-line-length = 100
+extend-ignore = E203, W503, E501
+exclude = 
+    .git,
+    __pycache__,
+    .pytest_cache,
+    .coverage,
+    htmlcov,
+    venv,
+    env,
+    migrations,
+    build,
+    dist
+
+[mypy]
+python_version = 3.11
+warn_return_any = True
+warn_unused_configs = True
+disallow_untyped_defs = True
+disallow_incomplete_defs = True
+check_untyped_defs = True
+disallow_untyped_decorators = True
+no_implicit_optional = True
+warn_redundant_casts = True
+warn_unused_ignores = True
+warn_no_return = True
+warn_unreachable = True
+strict_equality = True
+ignore_missing_imports = True
+
+[isort]
+profile = black
+multi_line_output = 3
+line_length = 100
+known_first_party = app
+known_third_party = fastapi,pydantic,motor,beanie,pytest
+
+[black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''

@@ -3,25 +3,30 @@
 import asyncio
 import logging
 import re
+import time
 from typing import Optional, List, Dict, Any
 import json
 import os
 
-logger = logging.getLogger(__name__)
+from app.logging_config import AILogger
+
+logger = logging.getLogger("app.ai.extractor")
 
 try:
     import langfun as lf
     from langfun.core import llms
     LANGFUN_AVAILABLE = True
-    logger.info("langfun imported successfully")
+    logger.info("langfun imported successfully", extra={
+        "extra_data": {"langfun_version": getattr(lf, '__version__', 'unknown')}
+    })
 except ImportError as e:
     LANGFUN_AVAILABLE = False
-    logger.warning(
-        f"langfun not available, falling back to rule-based extraction. Error: {e}"
-    )
+    logger.warning("langfun not available, falling back to rule-based extraction", extra={
+        "extra_data": {"error": str(e)}
+    })
 except Exception as e:
     LANGFUN_AVAILABLE = False
-    logger.error(f"Unexpected error importing langfun: {e}")
+    logger.error("Unexpected error importing langfun", exc_info=e)
 
 from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult, ExtractedImage
 
@@ -39,6 +44,15 @@ class RecipeExtractor:
         """
         self.use_ai = use_ai and LANGFUN_AVAILABLE
         self.api_key = api_key or os.environ.get('OPENAI_API_KEY')
+        
+        logger.info("Initializing RecipeExtractor", extra={
+            "extra_data": {
+                "use_ai_requested": use_ai,
+                "langfun_available": LANGFUN_AVAILABLE,
+                "api_key_present": bool(self.api_key),
+                "final_use_ai": self.use_ai
+            }
+        })
         
         if self.use_ai and self.api_key:
             self._configure_langfun()

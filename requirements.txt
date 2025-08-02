@@ -20,4 +20,16 @@ openai==1.51.2
 # Testing
 pytest==7.4.3
 pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-xdist==3.3.1
+pytest-mock==3.12.0
 httpx==0.25.2
+
+# Linting and code quality
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Security (removed safety to avoid packaging conflict)
+bandit==1.7.5
