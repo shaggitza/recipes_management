@@ -79,6 +79,7 @@ Rules:
 - Estimate prep_time and cook_time if not explicitly stated (in minutes)
 - Set difficulty as "easy", "medium", or "hard"
 - Extract meaningful tags (cuisine, meal type, dietary restrictions, etc.)
+- For meal_times, use only these values: "breakfast", "lunch", "dinner", "snack", "brunch", "dessert"
 - Include clear step-by-step instructions
 - For images, set relevance_score (0.0-1.0) and is_primary (true for main image)
 

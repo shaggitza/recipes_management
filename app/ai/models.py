@@ -34,5 +34,10 @@ class RecipeExtraction(pg.Object):
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     tags: List[str] = []
+    meal_times: List[str] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
+
+
+# Alias for compatibility with tests
+ExtractedRecipe = RecipeExtraction

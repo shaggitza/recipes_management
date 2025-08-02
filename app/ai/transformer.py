@@ -42,6 +42,7 @@ class RecipeTransformer:
                     "servings": extracted_recipe.servings,
                     "difficulty": extracted_recipe.difficulty,
                     "tags": extracted_recipe.tags,
+                    "meal_times": extracted_recipe.meal_times,
                     "source_url": getattr(extracted_recipe, "source_url", None),
                 }
 
@@ -74,6 +75,7 @@ class RecipeTransformer:
                 servings=recipe_data.get("servings"),
                 difficulty=difficulty,
                 tags=self._clean_tags(recipe_data.get("tags", [])),
+                meal_times=self._clean_meal_times(recipe_data.get("meal_times", [])),
                 source=source,
                 images=[],  # No images extracted yet
                 metadata={
@@ -261,6 +263,21 @@ class RecipeTransformer:
         # Remove duplicates and limit count
         unique_tags = list(dict.fromkeys(cleaned_tags))  # Preserve order
         return unique_tags[:20]  # Limit to 20 tags
+
+    def _clean_meal_times(self, meal_times: list[str]) -> list[str]:
+        """Clean and validate meal_times."""
+        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        cleaned_meal_times = []
+        
+        for meal_time in meal_times:
+            if meal_time:
+                meal_time = meal_time.strip().lower()
+                if meal_time in valid_meal_times:
+                    cleaned_meal_times.append(meal_time)
+        
+        # Remove duplicates while preserving order
+        unique_meal_times = list(dict.fromkeys(cleaned_meal_times))
+        return unique_meal_times[:6]  # Limit to 6 meal times
 
     def _extract_domain_name(self, url: Optional[str]) -> Optional[str]:
         """Extract domain name from URL for source name."""

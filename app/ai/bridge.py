@@ -42,6 +42,7 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
         "servings": recipe.servings,
         "difficulty": recipe.difficulty,
         "tags": list(recipe.tags),
+        "meal_times": list(recipe.meal_times),
         "source_url": source_url,
         "images": [
             {
