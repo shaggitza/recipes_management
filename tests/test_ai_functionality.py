@@ -12,7 +12,7 @@ from app.ai.scraper import RecipeScraper
 from app.ai.extractor import RecipeExtractor
 from app.ai.transformer import RecipeTransformer
 from app.ai.importer import RecipeImporter
-from app.ai.models import ExtractedRecipe, ExtractedImage
+from app.ai.models import RecipeExtraction, ExtractedImage
 
 
 class TestRecipeScraper:
@@ -163,7 +163,7 @@ class TestRecipeExtractor:
         result = extractor.extract_recipe(sample_scraped_data)
         
         assert result is not None
-        assert isinstance(result, ExtractedRecipe)
+        assert isinstance(result, RecipeExtraction)
         assert result.title == "Chocolate Cake Recipe"
         assert result.extraction_method == "rule_based"
     
@@ -219,7 +219,7 @@ class TestRecipeTransformer:
     
     @pytest.fixture
     def sample_extracted_recipe(self):
-        return ExtractedRecipe(
+        return RecipeExtraction(
             title="Chocolate Cake",
             description="Delicious chocolate cake",
             ingredients=["2 cups flour", "1 cup sugar", "1/2 cup cocoa powder"],
@@ -265,7 +265,7 @@ class TestRecipeTransformer:
             "3 large eggs"
         ]
         
-        recipe = ExtractedRecipe(
+        recipe = RecipeExtraction(
             title="Test Recipe",
             ingredients=ingredients,
             extraction_method="test"
@@ -317,7 +317,7 @@ class TestRecipeImporter:
             mock_scrape.return_value = Mock(url="https://example.com/recipe")
             
             # Mock extractor
-            mock_extracted = ExtractedRecipe(
+            mock_extracted = RecipeExtraction(
                 title="Test Recipe",
                 extraction_method="test"
             )
@@ -349,7 +349,7 @@ class TestRecipeImporter:
             with patch.object(importer.extractor, 'extract_recipe') as mock_extract, \
                  patch.object(importer.transformer, 'transform_to_recipe') as mock_transform:
                 
-                mock_extracted = ExtractedRecipe(title="Test Recipe", extraction_method="test")
+                mock_extracted = RecipeExtraction(title="Test Recipe", extraction_method="test")
                 mock_extract.return_value = mock_extracted
                 
                 from app.models.recipe import Recipe
