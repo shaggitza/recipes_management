@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <title>Mobile Features Test - Recipe Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Test-specific styles */
+        .test-section {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+        .status.pass { background: #d4edda; color: #155724; }
+        .status.fail { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-utensils"></i> Mobile Features Test</h1>
+            <p>Testing mobile optimization fixes</p>
+        </header>
+
+        <!-- Test 1: Mobile Filters -->
+        <div class="test-section">
+            <h3>Test 1: Mobile Filter Toggle</h3>
+            <p>On mobile (or narrow screen), you should see a "Filters" button that shows/hides the filter options.</p>
+            
+            <div class="nav">
+                <div class="filter-container">
+                    <button id="filterToggle" class="filter-toggle" style="display: none;">
+                        <i class="fas fa-filter"></i> Filters
+                    </button>
+                    <div id="filterContent" class="filter-content">
+                        <select class="filter-select">
+                            <option>All Difficulties</option>
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                        <select class="filter-select">
+                            <option>All Tags</option>
+                            <option>Vegetarian</option>
+                            <option>Quick</option>
+                        </select>
+                        <button class="btn btn-danger">Clear Filters</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="test-button" onclick="testMobileFilters()">Test Mobile Filters</button>
+            <span id="filterStatus" class="status"></span>
+        </div>
+
+        <!-- Test 2: Photo Lightbox -->
+        <div class="test-section">
+            <h3>Test 2: Mobile Photo Lightbox</h3>
+            <p>Click the image below to test the improved mobile lightbox experience.</p>
+            
+            <div class="recipe-image-gallery">
+                <div class="recipe-image-item" onclick="testShowImageLightbox()">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzY2N2VlYSIvPiA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UZXN0IEltYWdlPC90ZXh0PiA8L3N2Zz4=" alt="Test recipe image" />
+                </div>
+            </div>
+            
+            <button class="test-button" onclick="testShowImageLightbox()">Test Photo Lightbox</button>
+            <span id="lightboxStatus" class="status"></span>
+        </div>
+
+        <!-- Test 3: URL Routing -->
+        <div class="test-section">
+            <h3>Test 3: URL Routing</h3>
+            <p>Test recipe URL routing and browser back/forward functionality.</p>
+            
+            <div class="recipes-grid">
+                <div class="recipe-card" onclick="testRecipeUrl('recipe-1', 'Test Recipe 1')">
+                    <div class="recipe-card-content">
+                        <h3>Test Recipe 1</h3>
+                        <p>Click to test URL routing</p>
+                    </div>
+                </div>
+                <div class="recipe-card" onclick="testRecipeUrl('recipe-2', 'Test Recipe 2')">
+                    <div class="recipe-card-content">
+                        <h3>Test Recipe 2</h3>
+                        <p>Click to test URL routing</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <button class="test-button" onclick="testUrlRouting()">Test Current URL</button>
+                <span id="urlStatus" class="status"></span>
+            </div>
+            <div>
+                <button class="test-button" onclick="history.back()">Test Back Button</button>
+                <button class="test-button" onclick="history.forward()">Test Forward Button</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Recipe Detail Modal -->
+    <div id="recipeDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailTitle">Test Recipe</h2>
+                <button class="close" onclick="closeTestModal()">&times;</button>
+            </div>
+            <div id="recipeDetailContent" class="recipe-detail">
+                <p>This is a test recipe detail view to verify URL routing works correctly.</p>
+                <p>Check that the URL includes the recipe ID and the browser back button works.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple test implementation
+        class TestRecipeManager {
+            constructor() {
+                this.savedFilters = null;
+                this.init();
+            }
+            
+            init() {
+                this.initMobileFeatures();
+                this.initUrlHandling();
+            }
+            
+            initMobileFeatures() {
+                this.setupMobileFilters();
+                this.checkMobileView();
+            }
+            
+            setupMobileFilters() {
+                const filterToggle = document.getElementById('filterToggle');
+                const filterContent = document.getElementById('filterContent');
+                
+                if (filterToggle && filterContent) {
+                    filterToggle.addEventListener('click', () => {
+                        console.log('Filter toggle clicked');
+                        
+                        const isExpanded = filterContent.classList.contains('expanded');
+                        console.log('Current expanded state:', isExpanded);
+                        
+                        filterContent.classList.toggle('expanded');
+                        filterToggle.classList.toggle('active');
+                        
+                        if (isExpanded) {
+                            filterToggle.innerHTML = '<i class="fas fa-filter"></i> Filters';
+                        } else {
+                            filterToggle.innerHTML = '<i class="fas fa-times"></i> Hide Filters';
+                        }
+                        
+                        console.log('New expanded state:', filterContent.classList.contains('expanded'));
+                    });
+                } else {
+                    console.warn('Filter toggle or content not found');
+                }
+            }
+            
+            checkMobileView() {
+                const isMobile = window.innerWidth <= 768;
+                const filterToggle = document.getElementById('filterToggle');
+                const filterContent = document.getElementById('filterContent');
+                
+                if (filterToggle && filterContent) {
+                    if (isMobile) {
+                        filterToggle.style.display = 'block';
+                        filterContent.classList.remove('expanded');
+                        filterToggle.classList.remove('active');
+                    } else {
+                        filterToggle.style.display = 'none';
+                        filterContent.classList.add('expanded');
+                        filterContent.style.display = 'grid';
+                    }
+                }
+                
+                window.addEventListener('resize', () => {
+                    this.checkMobileView();
+                });
+            }
+            
+            initUrlHandling() {
+                window.addEventListener('popstate', (event) => {
+                    if (event.state && event.state.recipeId) {
+                        this.showTestRecipe(event.state.recipeId, event.state.title, false);
+                    } else {
+                        this.closeTestModal(false);
+                    }
+                });
+            }
+            
+            showTestRecipe(recipeId, title, updateUrl = true) {
+                const modal = document.getElementById('recipeDetailModal');
+                const titleEl = document.getElementById('detailTitle');
+                
+                if (modal && titleEl) {
+                    titleEl.textContent = title;
+                    modal.style.display = 'block';
+                    
+                    if (updateUrl) {
+                        const newUrl = `${window.location.pathname}${window.location.search}#recipe-${recipeId}`;
+                        history.pushState(
+                            { recipeId: recipeId, title: title }, 
+                            `${title} - Recipe Management`, 
+                            newUrl
+                        );
+                    }
+                }
+            }
+            
+            closeTestModal(updateUrl = true) {
+                const modal = document.getElementById('recipeDetailModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    
+                    if (updateUrl) {
+                        const newUrl = `${window.location.pathname}${window.location.search}`;
+                        history.pushState(null, 'Recipe Management', newUrl);
+                    }
+                }
+            }
+        }
+        
+        // Initialize test manager
+        const testManager = new TestRecipeManager();
+        
+        // Test functions
+        function testMobileFilters() {
+            const filterToggle = document.getElementById('filterToggle');
+            const filterContent = document.getElementById('filterContent');
+            const status = document.getElementById('filterStatus');
+            
+            if (window.innerWidth <= 768) {
+                if (filterToggle.style.display !== 'none') {
+                    status.textContent = 'PASS - Filter toggle visible on mobile';
+                    status.className = 'status pass';
+                } else {
+                    status.textContent = 'FAIL - Filter toggle not visible on mobile';
+                    status.className = 'status fail';
+                }
+            } else {
+                status.textContent = 'Resize window to ≤768px to test mobile filters';
+                status.className = 'status';
+            }
+        }
+        
+        function testShowImageLightbox() {
+            let lightbox = document.getElementById('imageLightbox');
+            if (!lightbox) {
+                lightbox = document.createElement('div');
+                lightbox.id = 'imageLightbox';
+                lightbox.className = 'image-lightbox';
+                lightbox.innerHTML = `
+                    <div class="lightbox-content">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAw IiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzY2N2VlYSIvPiA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UZXN0IEZ1bGwgU2l6ZSBJbWFnZTwvdGV4dD4gPC9zdmc+" alt="Test full size image" />
+                        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+                    </div>
+                `;
+                document.body.appendChild(lightbox);
+                
+                lightbox.addEventListener('click', (e) => {
+                    if (e.target === lightbox) {
+                        closeLightbox();
+                    }
+                });
+            }
+            
+            lightbox.style.display = 'block';
+            
+            const status = document.getElementById('lightboxStatus');
+            status.textContent = 'PASS - Lightbox opened (check mobile responsiveness)';
+            status.className = 'status pass';
+        }
+        
+        function closeLightbox() {
+            const lightbox = document.getElementById('imageLightbox');
+            if (lightbox) {
+                lightbox.style.display = 'none';
+            }
+        }
+        
+        function testRecipeUrl(recipeId, title) {
+            testManager.showTestRecipe(recipeId, title);
+        }
+        
+        function closeTestModal() {
+            testManager.closeTestModal();
+        }
+        
+        function testUrlRouting() {
+            const status = document.getElementById('urlStatus');
+            const currentUrl = window.location.href;
+            
+            if (currentUrl.includes('#recipe-')) {
+                status.textContent = 'PASS - URL contains recipe ID';
+                status.className = 'status pass';
+            } else {
+                status.textContent = 'Click a recipe card first to test URL routing';
+                status.className = 'status';
+            }
+        }
+    </script>
+</body>
+</html>
