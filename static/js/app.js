@@ -55,11 +55,27 @@ class RecipeManager {
         try {
             this.showLoading(true);
             const response = await fetch('/api/recipes/');
+            
+            // Check if response is ok (status 200-299)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Server error: ${response.status}`);
+            }
+            
             this.recipes = await response.json();
+            
+            // Ensure recipes is an array
+            if (!Array.isArray(this.recipes)) {
+                throw new Error('Invalid response format: expected array of recipes');
+            }
+            
             this.renderRecipes();
         } catch (error) {
             console.error('Error loading recipes:', error);
-            this.showError('Failed to load recipes');
+            this.showError(`Failed to load recipes: ${error.message}`);
+            // Set recipes to empty array to prevent further errors
+            this.recipes = [];
+            this.renderRecipes();
         } finally {
             this.showLoading(false);
         }
@@ -102,11 +118,27 @@ class RecipeManager {
             if (mealTimes.length > 0) params.append('meal_times', mealTimes.join(','));
             
             const response = await fetch(`/api/recipes/?${params}`);
+            
+            // Check if response is ok (status 200-299)
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Server error: ${response.status}`);
+            }
+            
             this.recipes = await response.json();
+            
+            // Ensure recipes is an array
+            if (!Array.isArray(this.recipes)) {
+                throw new Error('Invalid response format: expected array of recipes');
+            }
+            
             this.renderRecipes();
         } catch (error) {
             console.error('Error searching recipes:', error);
-            this.showError('Search failed');
+            this.showError(`Search failed: ${error.message}`);
+            // Set recipes to empty array to prevent further errors
+            this.recipes = [];
+            this.renderRecipes();
         } finally {
             this.showLoading(false);
         }

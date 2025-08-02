@@ -76,27 +76,27 @@ class RecipeRepository(BaseRepository):
         limit: int = 10, 
         filters: Optional[Dict[str, Any]] = None
     ) -> List[Recipe]:
-        """Get recipes with filtering and pagination using Beanie query builder"""
+        """Get recipes with filtering and pagination using consistent MongoDB query syntax"""
         query_conditions = []
         
         if filters:
-            # Build query conditions
+            # Build query conditions using consistent MongoDB syntax
             if "difficulty" in filters:
-                query_conditions.append(Recipe.difficulty == filters["difficulty"])
+                query_conditions.append({"difficulty": filters["difficulty"]})
             
             if "tags" in filters:
                 # Support both single tag and multiple tags
                 tags = filters["tags"]
                 if isinstance(tags, str):
                     tags = [tags]
-                query_conditions.append(Recipe.tags.in_(tags))
+                query_conditions.append({"tags": {"$in": tags}})
             
             if "meal_times" in filters:
                 # Support both single meal_time and multiple meal_times
                 meal_times = filters["meal_times"]
                 if isinstance(meal_times, str):
                     meal_times = [meal_times]
-                query_conditions.append(Recipe.meal_times.in_(meal_times))
+                query_conditions.append({"meal_times": {"$in": meal_times}})
             
             if "search" in filters:
                 # Use text search or regex for multiple fields
@@ -109,16 +109,17 @@ class RecipeRepository(BaseRepository):
                     ]
                 })
         
-        # Apply all conditions to the query
+        # Build final query using consistent MongoDB syntax
         if query_conditions:
             if len(query_conditions) == 1:
-                query = Recipe.find(query_conditions[0])
+                query_filter = query_conditions[0]
             else:
-                query = Recipe.find({"$and": query_conditions})
+                query_filter = {"$and": query_conditions}
         else:
-            query = Recipe.find()
+            query_filter = {}
         
-        return await query.sort(-Recipe.created_at).skip(skip).limit(limit).to_list()
+        # Use Recipe.find() with the MongoDB filter
+        return await Recipe.find(query_filter).sort(-Recipe.created_at).skip(skip).limit(limit).to_list()
     
     async def update(self, recipe_id: PydanticObjectId, data: RecipeUpdate) -> Optional[Recipe]:
         """Update recipe using Beanie's proper update patterns"""
@@ -196,45 +197,45 @@ class RecipeRepository(BaseRepository):
         return [doc["_id"] for doc in result if doc.get("_id")]
     
     async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
-        """Count recipes with optional filters"""
+        """Count recipes with optional filters using consistent MongoDB syntax"""
         query_conditions = []
         
         if filters:
             if "difficulty" in filters:
-                query_conditions.append(Recipe.difficulty == filters["difficulty"])
+                query_conditions.append({"difficulty": filters["difficulty"]})
             if "tags" in filters:
                 tags = filters["tags"]
                 if isinstance(tags, str):
                     tags = [tags]
-                query_conditions.append(Recipe.tags.in_(tags))
+                query_conditions.append({"tags": {"$in": tags}})
             if "meal_times" in filters:
                 meal_times = filters["meal_times"]
                 if isinstance(meal_times, str):
                     meal_times = [meal_times]
-                query_conditions.append(Recipe.meal_times.in_(meal_times))
+                query_conditions.append({"meal_times": {"$in": meal_times}})
         
-        # Apply all conditions to the query
+        # Build final query using consistent MongoDB syntax
         if query_conditions:
             if len(query_conditions) == 1:
-                query = Recipe.find(query_conditions[0])
+                query_filter = query_conditions[0]
             else:
-                query = Recipe.find({"$and": query_conditions})
+                query_filter = {"$and": query_conditions}
         else:
-            query = Recipe.find()
+            query_filter = {}
         
-        return await query.count()
+        return await Recipe.find(query_filter).count()
     
     async def get_recipes_by_difficulty(self, difficulty: str) -> List[Recipe]:
         """Get recipes filtered by difficulty level"""
-        return await Recipe.find(Recipe.difficulty == difficulty).sort(-Recipe.created_at).to_list()
+        return await Recipe.find({"difficulty": difficulty}).sort(-Recipe.created_at).to_list()
     
     async def get_recipes_by_tags(self, tags: List[str]) -> List[Recipe]:
         """Get recipes that contain any of the specified tags"""
-        return await Recipe.find(Recipe.tags.in_(tags)).sort(-Recipe.created_at).to_list()
+        return await Recipe.find({"tags": {"$in": tags}}).sort(-Recipe.created_at).to_list()
     
     async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
         """Get recipes that contain any of the specified meal times"""
-        return await Recipe.find(Recipe.meal_times.in_(meal_times)).sort(-Recipe.created_at).to_list()
+        return await Recipe.find({"meal_times": {"$in": meal_times}}).sort(-Recipe.created_at).to_list()
     
     async def get_recent_recipes(self, limit: int = 10) -> List[Recipe]:
         """Get the most recently created recipes"""
