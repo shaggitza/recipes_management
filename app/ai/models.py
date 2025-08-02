@@ -4,6 +4,17 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class ExtractedImage(BaseModel):
+    """Extracted image with metadata."""
+    url: str = Field(..., description="Image URL")
+    alt_text: Optional[str] = Field(None, description="Alt text description")
+    title: Optional[str] = Field(None, description="Image title")
+    width: Optional[int] = Field(None, description="Image width in pixels")
+    height: Optional[int] = Field(None, description="Image height in pixels")
+    relevance_score: Optional[float] = Field(None, description="AI-determined relevance score for recipe")
+    is_primary: bool = Field(False, description="Whether this is the primary recipe image")
+
+
 class ExtractedIngredient(BaseModel):
     """Extracted ingredient with standardized structure."""
     name: str = Field(..., description="Name of the ingredient")
@@ -23,6 +34,7 @@ class ExtractedRecipe(BaseModel):
     difficulty: Optional[str] = Field(None, description="Difficulty level: easy, medium, or hard")
     tags: List[str] = Field(default_factory=list, description="Recipe tags/categories")
     source_url: Optional[str] = Field(None, description="Original URL of the recipe")
+    images: List[ExtractedImage] = Field(default_factory=list, description="Recipe images")
     
     class Config:
         """Pydantic configuration."""

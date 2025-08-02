@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, List, Tuple
 import requests
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
@@ -66,6 +66,128 @@ class RecipeScraper:
         except Exception as e:
             logger.error(f"Unexpected error while scraping {url}: {e}")
             return None
+
+    def extract_images(self, html_content: str, base_url: str) -> List[dict]:
+        """
+        Extract all images from HTML content with metadata.
+        
+        Args:
+            html_content: Raw HTML content
+            base_url: Base URL for resolving relative image URLs
+            
+        Returns:
+            List of image dictionaries with metadata
+        """
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            images = []
+            
+            # Find all img tags
+            img_tags = soup.find_all('img')
+            
+            for img in img_tags:
+                # Get image URL
+                src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
+                if not src:
+                    continue
+                
+                # Resolve relative URLs
+                if src.startswith('//'):
+                    src = 'https:' + src
+                elif src.startswith('/'):
+                    src = urljoin(base_url, src)
+                elif not src.startswith(('http://', 'https://')):
+                    src = urljoin(base_url, src)
+                
+                # Skip very small images, icons, and tracking pixels
+                width = img.get('width')
+                height = img.get('height')
+                if width and height:
+                    try:
+                        width = int(width)
+                        height = int(height)
+                        if width < 100 or height < 100:
+                            continue
+                    except ValueError:
+                        pass
+                
+                # Skip common non-recipe images
+                alt_text = img.get('alt', '').lower()
+                title = img.get('title', '').lower()
+                src_lower = src.lower()
+                
+                # Skip icons, logos, ads, social media buttons
+                skip_patterns = [
+                    'icon', 'logo', 'avatar', 'profile', 'social', 'facebook', 'twitter',
+                    'instagram', 'pinterest', 'youtube', 'advertisement', 'banner',
+                    'header', 'footer', 'sidebar', 'nav', 'menu', 'button'
+                ]
+                
+                if any(pattern in alt_text or pattern in title or pattern in src_lower for pattern in skip_patterns):
+                    continue
+                
+                # Get parent context for better relevance scoring
+                parent_text = ''
+                parent = img.parent
+                if parent:
+                    parent_text = parent.get_text()[:200].lower()
+                
+                image_data = {
+                    'url': src,
+                    'alt_text': img.get('alt'),
+                    'title': img.get('title'),
+                    'width': width,
+                    'height': height,
+                    'parent_context': parent_text,
+                    'is_in_recipe_context': self._is_recipe_context(img)
+                }
+                
+                images.append(image_data)
+            
+            # Sort by relevance (recipe context first, then by size)
+            images.sort(key=lambda x: (
+                -int(x['is_in_recipe_context']),
+                -(x['width'] or 0) * (x['height'] or 0)
+            ))
+            
+            return images[:10]  # Limit to top 10 images
+            
+        except Exception as e:
+            logger.error(f"Error extracting images: {e}")
+            return []
+
+    def _is_recipe_context(self, img_tag) -> bool:
+        """
+        Check if an image is in a recipe-related context.
+        
+        Args:
+            img_tag: BeautifulSoup img tag
+            
+        Returns:
+            True if image appears to be recipe-related
+        """
+        # Check parent elements for recipe-related classes/IDs
+        current = img_tag
+        for _ in range(5):  # Check up to 5 parent levels
+            if current is None:
+                break
+            
+            # Check class and id attributes
+            classes = current.get('class', [])
+            element_id = current.get('id', '')
+            
+            recipe_indicators = [
+                'recipe', 'food', 'dish', 'cooking', 'ingredient', 'preparation',
+                'featured', 'hero', 'main', 'content', 'article'
+            ]
+            
+            text_content = ' '.join(classes + [element_id]).lower()
+            if any(indicator in text_content for indicator in recipe_indicators):
+                return True
+            
+            current = current.parent
+        
+        return False
 
     def extract_recipe_content(self, html_content: str, url: str) -> str:
         """
@@ -141,21 +263,25 @@ class RecipeScraper:
             logger.error(f"Error extracting recipe content: {e}")
             return html_content  # Fallback to raw HTML
 
-    async def scrape_and_extract(self, url: str) -> Optional[str]:
+    async def scrape_and_extract(self, url: str) -> Tuple[Optional[str], List[dict]]:
         """
-        Complete scraping and extraction pipeline.
+        Complete scraping and extraction pipeline with images.
         
         Args:
             url: URL to scrape
             
         Returns:
-            Extracted recipe content or None if failed
+            Tuple of (extracted recipe content, list of image data) or (None, []) if failed
         """
         html_content = await self.scrape_recipe_page(url)
         if not html_content:
-            return None
+            return None, []
         
-        return self.extract_recipe_content(html_content, url)
+        # Extract both text content and images
+        text_content = self.extract_recipe_content(html_content, url)
+        images = self.extract_images(html_content, url)
+        
+        return text_content, images
 
     def close(self):
         """Clean up resources."""

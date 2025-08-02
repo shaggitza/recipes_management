@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timezone
 
 from app.models.recipe import Recipe, RecipeCreate
@@ -84,8 +84,8 @@ class RecipeImporter:
                 logger.info(f"Import attempt {attempt}/{self.max_retries} for {url}")
                 
                 # Step 1: Scrape the web page
-                scraped_content = await self._scrape_with_retry(url, attempt)
-                if not scraped_content:
+                scrape_result = await self._scrape_with_retry(url, attempt)
+                if not scrape_result:
                     if attempt < self.max_retries:
                         await asyncio.sleep(self.retry_delay * attempt)
                         continue
@@ -97,8 +97,10 @@ class RecipeImporter:
                             attempts=attempt
                         )
                 
+                scraped_content, images = scrape_result
+                
                 # Step 2: Extract recipe data using AI
-                extraction_result = await self._extract_with_retry(scraped_content, url, attempt)
+                extraction_result = await self._extract_with_retry(scraped_content, images, url, attempt)
                 if not extraction_result.success:
                     if attempt < self.max_retries:
                         await asyncio.sleep(self.retry_delay * attempt)
@@ -172,13 +174,13 @@ class RecipeImporter:
             attempts=self.max_retries
         )
 
-    async def _scrape_with_retry(self, url: str, attempt: int) -> Optional[str]:
-        """Scrape content with error handling."""
+    async def _scrape_with_retry(self, url: str, attempt: int) -> Optional[Tuple[str, List[dict]]]:
+        """Scrape content and images with error handling."""
         try:
             logger.debug(f"Scraping attempt {attempt}: {url}")
-            content = await self.scraper.scrape_and_extract(url)
+            content, images = await self.scraper.scrape_and_extract(url)
             if content and len(content.strip()) > 100:  # Minimum content length
-                return content
+                return content, images
             else:
                 logger.warning(f"Scraped content too short or empty for {url}")
                 return None
@@ -186,11 +188,11 @@ class RecipeImporter:
             logger.error(f"Scraping error on attempt {attempt}: {e}")
             return None
 
-    async def _extract_with_retry(self, content: str, url: str, attempt: int) -> RecipeExtractionResult:
+    async def _extract_with_retry(self, content: str, images: List[dict], url: str, attempt: int) -> RecipeExtractionResult:
         """Extract recipe data with error handling."""
         try:
             logger.debug(f"Extraction attempt {attempt} for {url}")
-            return await self.extractor.extract_recipe(content, url)
+            return await self.extractor.extract_recipe(content, url, images)
         except Exception as e:
             logger.error(f"Extraction error on attempt {attempt}: {e}")
             return RecipeExtractionResult(
@@ -198,6 +200,7 @@ class RecipeImporter:
                 recipe=None,
                 error=f"Extraction failed: {str(e)}",
                 source_url=url
+            )
             )
 
     async def _transform_with_retry(

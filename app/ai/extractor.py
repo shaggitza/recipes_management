@@ -17,7 +17,7 @@ except ImportError:
     LANGFUN_AVAILABLE = False
     logger.warning("langfun not available, falling back to rule-based extraction")
 
-from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult
+from .models import ExtractedRecipe, ExtractedIngredient, RecipeExtractionResult, ExtractedImage
 
 
 class RecipeExtractor:
@@ -57,30 +57,31 @@ class RecipeExtractor:
             logger.error(f"Failed to configure langfun: {e}")
             self.use_ai = False
         
-    async def extract_recipe(self, content: str, source_url: str) -> RecipeExtractionResult:
+    async def extract_recipe(self, content: str, source_url: str, images: List[dict] = None) -> RecipeExtractionResult:
         """
-        Extract recipe data from scraped content.
+        Extract recipe data from scraped content and images.
         
         Args:
             content: Scraped web content
             source_url: Original URL
+            images: List of image data extracted from the page
             
         Returns:
             RecipeExtractionResult with extracted data
         """
         try:
-            logger.info(f"Extracting recipe from content (length: {len(content)})")
+            logger.info(f"Extracting recipe from content (length: {len(content)}) with {len(images or [])} images")
             
             if self.use_ai:
                 # Use langfun AI extraction
-                result = await self._extract_with_ai(content, source_url)
+                result = await self._extract_with_ai(content, source_url, images)
                 # If AI extraction fails, fall back to rule-based
                 if not result.success:
                     logger.info("AI extraction failed, falling back to rule-based")
-                    return await self._extract_with_rules(content, source_url)
+                    return await self._extract_with_rules(content, source_url, images)
                 return result
             else:
-                return await self._extract_with_rules(content, source_url)
+                return await self._extract_with_rules(content, source_url, images)
                 
         except Exception as e:
             logger.error(f"Error during recipe extraction: {e}")
@@ -91,13 +92,14 @@ class RecipeExtractor:
                 source_url=source_url
             )
 
-    async def _extract_with_ai(self, content: str, source_url: str) -> RecipeExtractionResult:
+    async def _extract_with_ai(self, content: str, source_url: str, images: List[dict] = None) -> RecipeExtractionResult:
         """
-        Extract recipe using AI (langfun) with structured output.
+        Extract recipe using AI (langfun) with structured output and image analysis.
         
         Args:
             content: Content to extract from
             source_url: Source URL
+            images: List of image data from the page
             
         Returns:
             Extraction result
@@ -106,21 +108,22 @@ class RecipeExtractor:
             raise ValueError("langfun not available")
             
         try:
-            logger.info("Using langfun AI extraction")
+            logger.info("Using langfun AI extraction with image analysis")
             
             # Create the langfun extraction function
             @lf.use_init_args(lf.LangFunc)
-            def extract_recipe_data(content_text: str) -> Dict[str, Any]:
-                """Extract structured recipe data from web content.
+            def extract_recipe_data(content_text: str, image_list: List[dict]) -> Dict[str, Any]:
+                """Extract structured recipe data from web content and images.
                 
                 Args:
                     content_text: The web page content containing the recipe
+                    image_list: List of images found on the page with metadata
                     
                 Returns:
                     A dictionary with the extracted recipe data in JSON format
                 """
                 return lf.query(
-                    self._create_langfun_prompt(content_text),
+                    self._create_langfun_prompt_with_images(content_text, image_list),
                     lf.Json[Dict[str, Any]]  # Structured JSON output
                 )
             
@@ -128,7 +131,7 @@ class RecipeExtractor:
             loop = asyncio.get_event_loop()
             ai_response = await loop.run_in_executor(
                 None, 
-                lambda: extract_recipe_data(content[:4000])  # Limit content length for token limits
+                lambda: extract_recipe_data(content[:4000], images or [])  # Limit content length for token limits
             )
             
             # Parse the AI response and create ExtractedRecipe
@@ -142,7 +145,8 @@ class RecipeExtractor:
                 extraction_metadata={
                     "method": "langfun_ai", 
                     "content_length": len(content),
-                    "model": "gpt-3.5-turbo"
+                    "model": "gpt-4.1-mini",
+                    "images_analyzed": len(images or [])
                 }
             )
             
@@ -155,18 +159,32 @@ class RecipeExtractor:
                 source_url=source_url
             )
 
-    def _create_langfun_prompt(self, content: str) -> str:
+    def _create_langfun_prompt_with_images(self, content: str, images: List[dict]) -> str:
         """
-        Create a prompt optimized for langfun structured extraction.
+        Create a prompt optimized for langfun structured extraction with image analysis.
         
         Args:
             content: Web content to extract from
+            images: List of image data to analyze
             
         Returns:
             Formatted prompt for langfun
         """
+        image_descriptions = []
+        for i, img in enumerate(images[:5]):  # Limit to top 5 images
+            img_desc = f"Image {i+1}: URL={img['url']}"
+            if img.get('alt_text'):
+                img_desc += f", Alt='{img['alt_text']}'"
+            if img.get('title'):
+                img_desc += f", Title='{img['title']}'"
+            if img.get('is_in_recipe_context'):
+                img_desc += ", Context=Recipe-related"
+            image_descriptions.append(img_desc)
+        
         return f"""
 Extract recipe information from the following web content. The content may be in Romanian or other languages - please translate everything to English.
+
+Also analyze the provided images and select which ones are most relevant for the recipe. Choose the best primary image and up to 3 additional relevant images.
 
 Please return the data in this exact JSON structure:
 {{
@@ -180,7 +198,11 @@ Please return the data in this exact JSON structure:
     "cook_time": 45,
     "servings": 4,
     "difficulty": "easy",
-    "tags": ["cuisine_type", "meal_type"]
+    "tags": ["cuisine_type", "meal_type"],
+    "images": [
+        {{"url": "image_url", "alt_text": "description", "relevance_score": 0.9, "is_primary": true}},
+        {{"url": "image_url", "alt_text": "description", "relevance_score": 0.7, "is_primary": false}}
+    ]
 }}
 
 Rules:
@@ -190,10 +212,29 @@ Rules:
 - Difficulty should be "easy", "medium", or "hard"
 - Extract meaningful tags like cuisine type, meal type, etc.
 - Ensure all ingredient amounts include units when possible
+- For images: Select the most relevant recipe images based on the content
+- Give relevance_score from 0.0 to 1.0 (1.0 being most relevant)
+- Mark the best image as is_primary: true
+- Include alt_text descriptions for accessibility
+
+Available Images:
+{chr(10).join(image_descriptions)}
 
 Web Content:
 {content}
 """
+
+    def _create_langfun_prompt(self, content: str) -> str:
+        """
+        Create a prompt optimized for langfun structured extraction (legacy method).
+        
+        Args:
+            content: Web content to extract from
+            
+        Returns:
+            Formatted prompt for langfun
+        """
+        return self._create_langfun_prompt_with_images(content, [])
 
     def _parse_ai_response(self, ai_response: Dict[str, Any], source_url: str) -> ExtractedRecipe:
         """
@@ -218,6 +259,19 @@ Web Content:
                     )
                     ingredients.append(ingredient)
             
+            # Convert images list to ExtractedImage objects
+            images = []
+            for img_data in ai_response.get('images', []):
+                if isinstance(img_data, dict):
+                    image = ExtractedImage(
+                        url=img_data.get('url', ''),
+                        alt_text=img_data.get('alt_text'),
+                        title=img_data.get('title'),
+                        relevance_score=img_data.get('relevance_score'),
+                        is_primary=img_data.get('is_primary', False)
+                    )
+                    images.append(image)
+            
             # Create the recipe object
             recipe = ExtractedRecipe(
                 title=ai_response.get('title', 'AI Extracted Recipe'),
@@ -229,7 +283,8 @@ Web Content:
                 servings=ai_response.get('servings'),
                 difficulty=ai_response.get('difficulty'),
                 tags=ai_response.get('tags', []),
-                source_url=source_url
+                source_url=source_url,
+                images=images
             )
             
             return recipe
@@ -242,7 +297,8 @@ Web Content:
                 description="Failed to parse AI response",
                 ingredients=[],
                 instructions=[],
-                source_url=source_url
+                source_url=source_url,
+                images=[]
             )
 
     def _create_extraction_prompt(self, content: str) -> str:
@@ -257,13 +313,14 @@ Web Content:
         """
         return self._create_langfun_prompt(content)
 
-    async def _extract_with_rules(self, content: str, source_url: str) -> RecipeExtractionResult:
+    async def _extract_with_rules(self, content: str, source_url: str, images: List[dict] = None) -> RecipeExtractionResult:
         """
         Extract recipe using rule-based parsing as fallback.
         
         Args:
             content: Content to extract from
             source_url: Source URL
+            images: List of image data from the page
             
         Returns:
             Extraction result
@@ -290,6 +347,9 @@ Web Content:
             # Extract tags/categories
             tags = self._extract_tags(content)
             
+            # Process images with simple heuristics
+            processed_images = self._process_images_basic(images or [])
+            
             # Create the extracted recipe
             recipe = ExtractedRecipe(
                 title=title or "Extracted Recipe",
@@ -301,7 +361,8 @@ Web Content:
                 servings=servings,
                 difficulty=self._extract_difficulty(content),
                 tags=tags,
-                source_url=source_url
+                source_url=source_url,
+                images=processed_images
             )
             
             return RecipeExtractionResult(
@@ -309,7 +370,11 @@ Web Content:
                 recipe=recipe,
                 error=None,
                 source_url=source_url,
-                extraction_metadata={"method": "rule_based", "content_length": len(content)}
+                extraction_metadata={
+                    "method": "rule_based", 
+                    "content_length": len(content),
+                    "images_processed": len(processed_images)
+                }
             )
             
         except Exception as e:
@@ -497,6 +562,47 @@ Web Content:
                         tags.append(tag)
         
         return tags[:10]  # Limit number of tags
+
+    def _process_images_basic(self, images: List[dict]) -> List[ExtractedImage]:
+        """
+        Process images with basic heuristics (fallback when AI is not available).
+        
+        Args:
+            images: List of image data from scraper
+            
+        Returns:
+            List of ExtractedImage objects
+        """
+        processed_images = []
+        
+        for i, img_data in enumerate(images[:4]):  # Limit to top 4 images
+            # Simple scoring based on context and position
+            score = 0.5  # Base score
+            
+            if img_data.get('is_in_recipe_context'):
+                score += 0.3
+            
+            # First image gets bonus
+            if i == 0:
+                score += 0.2
+            
+            # Images with recipe-related alt text get bonus
+            alt_text = img_data.get('alt_text', '').lower()
+            if any(word in alt_text for word in ['recipe', 'food', 'dish', 'cooking']):
+                score += 0.2
+            
+            processed_image = ExtractedImage(
+                url=img_data['url'],
+                alt_text=img_data.get('alt_text'),
+                title=img_data.get('title'),
+                width=img_data.get('width'),
+                height=img_data.get('height'),
+                relevance_score=min(score, 1.0),
+                is_primary=(i == 0)  # First image is primary
+            )
+            processed_images.append(processed_image)
+        
+        return processed_images
 
     def _extract_difficulty(self, content: str) -> Optional[str]:
         """Extract difficulty level."""
