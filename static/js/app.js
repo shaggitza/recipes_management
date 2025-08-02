@@ -33,6 +33,7 @@ class RecipeManager {
         document.getElementById('difficultyFilter').addEventListener('change', () => this.searchRecipes());
         document.getElementById('tagFilter').addEventListener('change', () => this.searchRecipes());
         document.getElementById('mealTimeFilter').addEventListener('change', () => this.searchRecipes());
+        document.getElementById('clearFiltersBtn').addEventListener('click', () => this.clearFilters());
 
         // Dynamic form elements
         document.getElementById('addIngredient').addEventListener('click', () => this.addIngredientRow());
@@ -142,6 +143,26 @@ class RecipeManager {
         } finally {
             this.showLoading(false);
         }
+    }
+
+    clearFilters() {
+        // Clear search input
+        document.getElementById('searchInput').value = '';
+        
+        // Reset difficulty filter
+        document.getElementById('difficultyFilter').value = '';
+        
+        // Reset tag filter
+        document.getElementById('tagFilter').value = '';
+        
+        // Reset meal time filter (multiselect)
+        const mealTimeFilter = document.getElementById('mealTimeFilter');
+        Array.from(mealTimeFilter.options).forEach(option => {
+            option.selected = false;
+        });
+        
+        // Reload all recipes
+        this.loadRecipes();
     }
 
     renderRecipes() {
