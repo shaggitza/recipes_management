@@ -36,6 +36,7 @@ def main():
         temperature_fahrenheit=392,  # 200°C
         duration_minutes=35,
         preheat_required=True,
+        convection=False,
         rack_position="middle",
         utensils=[Utensil(type="baking tray", material="metal")]
     )
@@ -45,10 +46,15 @@ def main():
     ai_recipe = RecipeExtraction(
         title="Pâine de Casă cu Drojdie",
         description="Traditional Romanian homemade bread with yeast",
+        ingredients=[],  # Required field, provide empty list
+        instructions=[],  # Required field, provide empty list
         prep_time=20,
         cook_time=35,
         servings=8,
         difficulty="medium",
+        tags=[],  # Required field, provide empty list
+        meal_times=[],  # Required field, provide empty list
+        images=[],  # Required field, provide empty list
         appliance_settings=[gas_setting, oven_setting]
     )
     
