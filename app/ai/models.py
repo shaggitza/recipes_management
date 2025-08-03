@@ -45,7 +45,7 @@ class AirfryerSettings(pg.Object):
     """Settings for airfryer cooking."""
     
     appliance_type: Literal["airfryer"] = "airfryer"
-    temperature_fahrenheit: int
+    temperature_celsius: int
     duration_minutes: int
     preheat_required: bool  # Remove default - let AI decide
     shake_interval_minutes: Optional[int] = None
@@ -57,7 +57,7 @@ class ElectricGrillSettings(pg.Object):
     """Settings for electric grill with temperature control."""
     
     appliance_type: Literal["electric_grill"] = "electric_grill"
-    temperature_fahrenheit: int
+    temperature_celsius: int
     duration_minutes: Optional[int] = None
     preheat_required: bool  # Remove default - let AI decide
     utensils: List[Utensil]  # Remove default - let AI populate
@@ -79,7 +79,7 @@ class InductionStoveSettings(pg.Object):
     
     appliance_type: Literal["induction_stove"] = "induction_stove"
     power_level: int  # induction typically has power levels 1-10
-    temperature_fahrenheit: Optional[int] = None
+    temperature_celsius: Optional[int] = None
     duration_minutes: Optional[int] = None
     utensils: List[Utensil]  # Remove default - let AI populate
     notes: Optional[str] = None
@@ -89,7 +89,7 @@ class OvenSettings(pg.Object):
     """Settings for kitchen oven."""
     
     appliance_type: Literal["oven"] = "oven"
-    temperature_fahrenheit: int
+    temperature_celsius: int
     duration_minutes: int
     preheat_required: bool  # Remove default - let AI decide
     rack_position: Optional[str] = None  # e.g., "middle", "top", "bottom"

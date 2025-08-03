@@ -85,8 +85,8 @@ async def test_ai_appliance_settings_extraction():
             if appliance_settings:
                 for i, setting in enumerate(appliance_settings):
                     print(f"   {i+1}. Type: {setting.get('appliance_type', 'unknown')}")
-                    if 'temperature_fahrenheit' in setting:
-                        print(f"      Temperature: {setting['temperature_fahrenheit']}°F")
+                    if 'temperature_celsius' in setting:
+                        print(f"      Temperature: {setting['temperature_celsius']}°C")
                     if 'heat_level' in setting:
                         print(f"      Heat Level: {setting['heat_level']}")
                     if 'flame_level' in setting:
@@ -99,13 +99,13 @@ async def test_ai_appliance_settings_extraction():
                 # This recipe should generate oven settings because it mentions "cuptorul la 200°C" and "coacem"
                 oven_settings = [s for s in appliance_settings if s.get('appliance_type') == 'oven']
                 if oven_settings:
-                    print(f"   ✅ Found oven settings - temperature should be around 200°C (392°F)")
+                    print(f"   ✅ Found oven settings - temperature should be around 200°C")
                     oven = oven_settings[0]
-                    temp = oven.get('temperature_fahrenheit')
-                    if temp and 380 <= temp <= 400:  # 200°C is ~392°F
-                        print(f"   ✅ Temperature is realistic: {temp}°F")
+                    temp = oven.get('temperature_celsius')
+                    if temp and 190 <= temp <= 210:  # 200°C ± 10°C
+                        print(f"   ✅ Temperature is realistic: {temp}°C")
                     else:
-                        print(f"   ⚠️  Temperature might be off: {temp}°F (expected ~392°F)")
+                        print(f"   ⚠️  Temperature might be off: {temp}°C (expected ~200°C)")
                 else:
                     print(f"   ⚠️  No oven settings found - this recipe mentions baking at 200°C")
                 
@@ -137,7 +137,7 @@ async def test_direct_pyglove_model():
         )
         
         oven_setting = OvenSettings(
-            temperature_fahrenheit=375,
+            temperature_celsius=190,
             duration_minutes=25,
             preheat_required=True
         )
@@ -218,7 +218,7 @@ async def test_mock_ai_extraction():
         )
         
         mock_oven_setting = OvenSettings(
-            temperature_fahrenheit=392,  # 200°C
+            temperature_celsius=200,  # 200°C
             duration_minutes=32,
             preheat_required=True,
             rack_position="middle",
@@ -242,8 +242,8 @@ async def test_mock_ai_extraction():
         if appliance_settings:
             for i, setting in enumerate(appliance_settings):
                 print(f"      {i+1}. Type: {setting.get('appliance_type', 'unknown')}")
-                if 'temperature_fahrenheit' in setting:
-                    print(f"         Temperature: {setting['temperature_fahrenheit']}°F")
+                if 'temperature_celsius' in setting:
+                    print(f"         Temperature: {setting['temperature_celsius']}°C")
                 if 'flame_level' in setting:
                     print(f"         Flame Level: {setting['flame_level']}")
                 if 'duration_minutes' in setting:
