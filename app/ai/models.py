@@ -136,9 +136,9 @@ class RecipeExtraction(pg.Object):
     ] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
-    # For PyGlove, we'll use a separate approach for appliance settings
-    # The AI model should generate a list where each item is one of the appliance setting types
-    appliance_settings: List = []  # Will be validated at runtime
+    # For PyGlove, we'll use a list of appliance settings
+    # The AI model will generate appropriate appliance setting objects
+    appliance_settings: List = []
 
 
 # Helper function to create appliance settings choice for PyGlove

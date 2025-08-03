@@ -10,6 +10,90 @@ from .models import RecipeExtraction
 logger = logging.getLogger("app.ai.bridge")
 
 
+def _convert_appliance_setting_to_dict(setting) -> Dict[str, Any]:
+    """Convert a PyGlove appliance setting to dictionary format."""
+    if hasattr(setting, 'model_dump'):
+        # If it has model_dump, it's a Pydantic-like object
+        return setting.model_dump()
+    elif hasattr(setting, '_sym_attributes'):
+        # PyGlove object - use _sym_attributes to get the actual data
+        setting_dict = {}
+        sym_attrs = setting._sym_attributes
+        
+        for key, value in sym_attrs.items():
+            if key == 'utensils' and value:
+                # Convert utensils list
+                setting_dict[key] = [
+                    _convert_utensil_to_dict(utensil) for utensil in value
+                ]
+            else:
+                setting_dict[key] = value
+        
+        return setting_dict
+    elif hasattr(setting, '__dict__'):
+        # Convert regular object to dict, filtering out internal attributes
+        setting_dict = {}
+        for key, value in setting.__dict__.items():
+            if not key.startswith('_'):
+                if key == 'utensils' and value:
+                    # Convert utensils list
+                    setting_dict[key] = [
+                        _convert_utensil_to_dict(utensil) for utensil in value
+                    ]
+                else:
+                    setting_dict[key] = value
+        return setting_dict
+    else:
+        # Fallback: try to access attributes directly
+        try:
+            setting_dict = {}
+            # Get all the attributes from the class definition
+            setting_dict['appliance_type'] = getattr(setting, 'appliance_type', None)
+            
+            # Common attributes that might exist
+            for attr in ['flame_level', 'heat_level', 'power_level', 'temperature_fahrenheit', 
+                        'duration_minutes', 'preheat_required', 'shake_interval_minutes',
+                        'rack_position', 'convection', 'heat_zone', 'lid_position', 'notes']:
+                if hasattr(setting, attr):
+                    setting_dict[attr] = getattr(setting, attr)
+            
+            # Handle utensils
+            if hasattr(setting, 'utensils'):
+                utensils = getattr(setting, 'utensils', [])
+                if utensils:
+                    setting_dict['utensils'] = [
+                        _convert_utensil_to_dict(utensil) for utensil in utensils
+                    ]
+                else:
+                    setting_dict['utensils'] = []
+            
+            return setting_dict
+        except:
+            # Final fallback
+            return {"appliance_type": "unknown", "error": "conversion_failed"}
+
+
+def _convert_utensil_to_dict(utensil) -> Dict[str, Any]:
+    """Convert a PyGlove utensil to dictionary format."""
+    if hasattr(utensil, 'model_dump'):
+        return utensil.model_dump()
+    elif hasattr(utensil, '_sym_attributes'):
+        # PyGlove object - use _sym_attributes
+        return dict(utensil._sym_attributes)
+    elif hasattr(utensil, '__dict__'):
+        return {k: v for k, v in utensil.__dict__.items() if not k.startswith('_')}
+    else:
+        # For PyGlove objects, try to access attributes directly
+        try:
+            utensil_dict = {}
+            for attr in ['type', 'size', 'material', 'notes']:
+                if hasattr(utensil, attr):
+                    utensil_dict[attr] = getattr(utensil, attr)
+            return utensil_dict
+        except:
+            return {"type": "unknown", "error": "conversion_failed"}
+
+
 class RecipeExtractionResult:
     """Result wrapper to maintain compatibility with existing code."""
     
@@ -49,6 +133,10 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
                 "is_primary": img.is_primary,
             }
             for img in recipe.images
+        ],
+        "appliance_settings": [
+            _convert_appliance_setting_to_dict(setting)
+            for setting in recipe.appliance_settings
         ],
     }
 
