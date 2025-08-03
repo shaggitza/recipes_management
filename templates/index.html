@@ -211,6 +211,29 @@
                     </button>
                 </div>
 
+                <div class="form-group">
+                    <label>Appliance Settings</label>
+                    <div id="applianceSettingsContainer">
+                        <!-- Appliance settings will be added here -->
+                    </div>
+                    <div class="appliance-add-controls">
+                        <select id="applianceTypeSelect" class="appliance-type-select">
+                            <option value="">Select appliance to add...</option>
+                            <option value="gas_burner">Gas Burner</option>
+                            <option value="airfryer">Airfryer</option>
+                            <option value="electric_grill">Electric Grill</option>
+                            <option value="electric_stove">Electric Stove</option>
+                            <option value="induction_stove">Induction Stove</option>
+                            <option value="oven">Oven</option>
+                            <option value="charcoal_grill">Charcoal Grill</option>
+                            <option value="stove">General Stove</option>
+                        </select>
+                        <button type="button" id="addApplianceSetting" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Add Appliance
+                        </button>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Recipe</button>
