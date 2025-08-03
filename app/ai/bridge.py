@@ -50,6 +50,7 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
             }
             for img in recipe.images
         ],
+        "appliance_settings": list(recipe.appliance_settings),
     }
 
 

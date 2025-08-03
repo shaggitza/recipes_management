@@ -4,7 +4,12 @@ import logging
 from typing import Optional, Literal
 from datetime import datetime, timezone
 
-from app.models.recipe import RecipeCreate, Ingredient, Source, MealTime
+from app.models.recipe import (
+    RecipeCreate, Ingredient, Source, MealTime, ApplianceSettings,
+    GasBurnerSettings, ElectricStoveSettings, InductionStoveSettings,
+    AirfryerSettings, ElectricGrillSettings, OvenSettings,
+    CharcoalGrillSettings, ElectricBasicSettings
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +49,7 @@ class RecipeTransformer:
                     "tags": extracted_recipe.tags,
                     "meal_times": extracted_recipe.meal_times,
                     "source_url": getattr(extracted_recipe, "source_url", None),
+                    "appliance_settings": getattr(extracted_recipe, "appliance_settings", []),
                 }
 
             logger.info(f"Transforming extracted recipe: {recipe_data['title']}")
@@ -64,6 +70,9 @@ class RecipeTransformer:
             # Transform difficulty
             difficulty = self._normalize_difficulty(recipe_data.get("difficulty"))
             
+            # Transform appliance settings
+            appliance_settings = self._transform_appliance_settings(recipe_data.get("appliance_settings", []))
+            
             # Create the RecipeCreate object
             recipe_create = RecipeCreate(
                 title=self._clean_title(recipe_data["title"]),
@@ -78,6 +87,7 @@ class RecipeTransformer:
                 meal_times=self._clean_meal_times(recipe_data.get("meal_times", [])),
                 source=source,
                 images=[],  # No images extracted yet
+                appliance_settings=appliance_settings,
                 metadata={
                     "ai_extracted": True,
                     "extraction_timestamp": datetime.now(timezone.utc).isoformat(),
@@ -293,6 +303,143 @@ class RecipeTransformer:
                 unique_meal_times.append(meal_time)
         
         return unique_meal_times[:6]  # Limit to 6 meal times
+
+    def _transform_appliance_settings(self, extracted_appliance_settings: list) -> list[ApplianceSettings]:
+        """Transform AI-extracted appliance settings to Pydantic ApplianceSettings."""
+        appliance_settings = []
+        
+        for ext_appliance in extracted_appliance_settings or []:
+            try:
+                # Handle both dict and object formats
+                if isinstance(ext_appliance, dict):
+                    appliance_type = ext_appliance.get("appliance_type")
+                    settings_data = ext_appliance
+                else:
+                    # PyGlove object format
+                    appliance_type = ext_appliance.appliance_type
+                    settings_data = ext_appliance
+                
+                if not appliance_type:
+                    continue
+                    
+                # Transform settings based on appliance type
+                settings = self._create_appliance_settings(appliance_type, settings_data)
+                if settings:
+                    appliance_settings.append(ApplianceSettings(
+                        appliance_type=appliance_type,
+                        settings=settings
+                    ))
+                    
+            except Exception as e:
+                logger.warning(f"Skipping invalid appliance setting: {e}")
+                continue
+        
+        return appliance_settings
+
+    def _create_appliance_settings(self, appliance_type: str, settings_data):
+        """Create specific appliance settings based on type."""
+        try:
+            # Extract common fields
+            utensils = self._extract_utensils(settings_data)
+            notes = self._extract_notes(settings_data)
+            
+            if appliance_type == "gas_burner":
+                return GasBurnerSettings(
+                    flame_level=self._extract_field(settings_data, "flame_level", "medium"),
+                    burner_size=self._extract_field(settings_data, "burner_size", None),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "electric_stove":
+                return ElectricStoveSettings(
+                    heat_level=self._extract_field(settings_data, "heat_level", 5),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "induction_stove":
+                return InductionStoveSettings(
+                    temperature=self._extract_field(settings_data, "temperature", None),
+                    power_level=self._extract_field(settings_data, "power_level", None),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "airfryer":
+                return AirfryerSettings(
+                    temperature=self._extract_field(settings_data, "temperature", 350),
+                    time_minutes=self._extract_field(settings_data, "time_minutes", None),
+                    preheat=self._extract_field(settings_data, "preheat", True),
+                    shake_interval=self._extract_field(settings_data, "shake_interval", None),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "electric_grill":
+                return ElectricGrillSettings(
+                    temperature=self._extract_field(settings_data, "temperature", 400),
+                    preheat_time=self._extract_field(settings_data, "preheat_time", None),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "oven":
+                return OvenSettings(
+                    temperature=self._extract_field(settings_data, "temperature", 350),
+                    cooking_mode=self._extract_field(settings_data, "cooking_mode", "bake"),
+                    rack_position=self._extract_field(settings_data, "rack_position", "middle"),
+                    preheat=self._extract_field(settings_data, "preheat", True),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "charcoal_grill":
+                return CharcoalGrillSettings(
+                    charcoal_amount=self._extract_field(settings_data, "charcoal_amount", "medium"),
+                    heat_zone=self._extract_field(settings_data, "heat_zone", "direct"),
+                    cooking_time=self._extract_field(settings_data, "cooking_time", None),
+                    utensils=utensils,
+                    notes=notes
+                )
+            elif appliance_type == "electric_basic":
+                return ElectricBasicSettings(
+                    power_setting=self._extract_field(settings_data, "power_setting", "medium"),
+                    utensils=utensils,
+                    notes=notes
+                )
+            else:
+                logger.warning(f"Unknown appliance type: {appliance_type}")
+                return None
+                
+        except Exception as e:
+            logger.warning(f"Error creating {appliance_type} settings: {e}")
+            return None
+
+    def _extract_field(self, settings_data, field_name: str, default_value=None):
+        """Extract field from settings data (dict or object)."""
+        if isinstance(settings_data, dict):
+            return settings_data.get(field_name, default_value)
+        else:
+            # PyGlove object with nested appliance-specific settings
+            # Try to get from the specific appliance object first
+            appliance_obj = getattr(settings_data, settings_data.appliance_type, None)
+            if appliance_obj:
+                return getattr(appliance_obj, field_name, default_value)
+            # Fallback to direct attribute
+            return getattr(settings_data, field_name, default_value)
+
+    def _extract_utensils(self, settings_data) -> list[str]:
+        """Extract utensils list from settings data."""
+        utensils = self._extract_field(settings_data, "utensils", [])
+        if isinstance(utensils, str):
+            # If it's a string, split by commas
+            return [u.strip() for u in utensils.split(",") if u.strip()]
+        elif isinstance(utensils, list):
+            return [str(u).strip() for u in utensils if str(u).strip()]
+        return []
+
+    def _extract_notes(self, settings_data) -> Optional[str]:
+        """Extract notes from settings data."""
+        notes = self._extract_field(settings_data, "notes", None)
+        if notes and isinstance(notes, str):
+            notes = notes.strip()
+            return notes if notes else None
+        return None
 
     def _extract_domain_name(self, url: Optional[str]) -> Optional[str]:
         """Extract domain name from URL for source name."""
