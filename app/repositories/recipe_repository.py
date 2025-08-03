@@ -57,26 +57,6 @@ class BaseRepository(ABC):
         """Count recipes with optional filters"""
         pass
 
-    @abstractmethod
-    async def get_all_meal_times(self) -> List[str]:
-        """Get all unique meal times"""
-        pass
-
-    @abstractmethod
-    async def get_recipes_by_difficulty(self, difficulty: str) -> List[Recipe]:
-        """Get recipes filtered by difficulty level"""
-        pass
-
-    @abstractmethod
-    async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
-        """Get recipes that contain any of the specified meal times"""
-        pass
-
-    @abstractmethod
-    async def get_recent_recipes(self, limit: int = 10) -> List[Recipe]:
-        """Get the most recently created recipes"""
-        pass
-
 
 class RecipeRepository(BaseRepository):
     """Beanie-based recipe repository with proper query patterns"""

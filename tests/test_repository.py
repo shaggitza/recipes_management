@@ -46,7 +46,7 @@ class TestRecipeRepository:
         """Create sample recipe document for testing."""
         # Create the recipe using the actual Beanie model with the test database
         recipe_data = sample_recipe_create.model_dump()
-        recipe = MagicMock(spec=Recipe, **recipe_data)
+        recipe = Recipe(**recipe_data)
         # Save it to the test database
         saved_recipe = await recipe.insert()
         return saved_recipe
@@ -55,7 +55,7 @@ class TestRecipeRepository:
     async def test_create_recipe(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
         """Test creating a recipe using repository."""
         with patch('app.models.recipe.Recipe.insert') as mock_insert:
-            mock_recipe = MagicMock(spec=Recipe)
+            mock_recipe = Recipe(**sample_recipe_create.model_dump())
             mock_recipe.id = PydanticObjectId()
             mock_insert.return_value = mock_recipe
             
@@ -68,23 +68,17 @@ class TestRecipeRepository:
             mock_insert.assert_called_once()
     
     @pytest.mark.asyncio
-    async def test_get_by_id_success(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
+    async def test_get_by_id_success(self, repository: RecipeRepository, sample_recipe: Recipe) -> None:
         """Test getting recipe by ID successfully."""
-        # Create a mock recipe with an ID using MagicMock to avoid Beanie initialization issues
-        mock_recipe = MagicMock(spec=Recipe)
-        mock_recipe.id = PydanticObjectId()
-        mock_recipe.title = "Test Recipe"
-        mock_recipe.description = "A test recipe"
-        
         with patch('app.models.recipe.Recipe.get') as mock_get:
-            mock_get.return_value = mock_recipe
+            mock_get.return_value = sample_recipe
             
-            result = await repository.get_by_id(mock_recipe.id)
+            result = await repository.get_by_id(sample_recipe.id)
             
             assert result is not None
-            assert result.id == mock_recipe.id
+            assert result.id == sample_recipe.id
             assert result.title == "Test Recipe"
-            mock_get.assert_called_once_with(mock_recipe.id)
+            mock_get.assert_called_once_with(sample_recipe.id)
     
     @pytest.mark.asyncio
     async def test_get_by_id_not_found(self, repository: RecipeRepository) -> None:
@@ -101,14 +95,14 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_all_no_filters(self, repository: RecipeRepository) -> None:
         """Test getting all recipes without filters."""
-        mock_recipes = [MagicMock(spec=Recipe, title=f"Recipe {i}") for i in range(3)]
+        mock_recipes = [Recipe(title=f"Recipe {i}") for i in range(3)]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
             mock_query.skip.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_all(skip=0, limit=10)
@@ -120,7 +114,7 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_all_with_difficulty_filter(self, repository: RecipeRepository) -> None:
         """Test getting recipes filtered by difficulty."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Easy Recipe", difficulty="easy")]
+        mock_recipes = [Recipe(title="Easy Recipe", difficulty="easy")]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
@@ -128,7 +122,7 @@ class TestRecipeRepository:
             mock_query.sort.return_value = mock_query
             mock_query.skip.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_all(filters={"difficulty": "easy"})
@@ -139,7 +133,7 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_all_with_tags_filter(self, repository: RecipeRepository) -> None:
         """Test getting recipes filtered by tags."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Vegetarian Recipe", tags=["vegetarian"])]
+        mock_recipes = [Recipe(title="Vegetarian Recipe", tags=["vegetarian"])]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
@@ -147,7 +141,7 @@ class TestRecipeRepository:
             mock_query.sort.return_value = mock_query
             mock_query.skip.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_all(filters={"tags": ["vegetarian"]})
@@ -158,14 +152,14 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_all_with_search_filter(self, repository: RecipeRepository) -> None:
         """Test getting recipes with search filter."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Chocolate Cake")]
+        mock_recipes = [Recipe(title="Chocolate Cake")]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
             mock_query.skip.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_all(filters={"search": "chocolate"})
@@ -174,24 +168,20 @@ class TestRecipeRepository:
             mock_find.assert_called_once()
     
     @pytest.mark.asyncio
-    async def test_update_recipe_success(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
+    async def test_update_recipe_success(self, repository: RecipeRepository, sample_recipe: Recipe) -> None:
         """Test updating a recipe successfully."""
-        # Create a mock recipe with an ID
-        mock_recipe = MagicMock(spec=Recipe)
-        mock_recipe.id = PydanticObjectId()
-        
         update_data = RecipeUpdate(title="Updated Recipe", difficulty="hard")
         
         with patch.object(repository, 'get_by_id') as mock_get:
-            with patch.object(mock_recipe, 'set') as mock_set:
-                mock_get.return_value = mock_recipe
+            with patch.object(sample_recipe, 'set') as mock_set:
+                mock_get.return_value = sample_recipe
                 mock_set.return_value = None
                 
-                result = await repository.update(mock_recipe.id, update_data)
+                result = await repository.update(sample_recipe.id, update_data)
                 
                 assert result is not None
-                assert result.id == mock_recipe.id
-                mock_get.assert_called_once_with(mock_recipe.id)
+                assert result.id == sample_recipe.id
+                mock_get.assert_called_once_with(sample_recipe.id)
                 mock_set.assert_called_once()
     
     @pytest.mark.asyncio
@@ -209,38 +199,30 @@ class TestRecipeRepository:
             mock_get.assert_called_once_with(recipe_id)
     
     @pytest.mark.asyncio
-    async def test_update_recipe_no_data(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
+    async def test_update_recipe_no_data(self, repository: RecipeRepository, sample_recipe: Recipe) -> None:
         """Test updating a recipe with no update data."""
-        # Create a mock recipe with an ID
-        mock_recipe = MagicMock(spec=Recipe)
-        mock_recipe.id = PydanticObjectId()
-        
         update_data = RecipeUpdate()
         
         with patch.object(repository, 'get_by_id') as mock_get:
-            mock_get.return_value = mock_recipe
+            mock_get.return_value = sample_recipe
             
-            result = await repository.update(mock_recipe.id, update_data)
+            result = await repository.update(sample_recipe.id, update_data)
             
-            assert result == mock_recipe
-            mock_get.assert_called_once_with(mock_recipe.id)
+            assert result == sample_recipe
+            mock_get.assert_called_once_with(sample_recipe.id)
     
     @pytest.mark.asyncio
-    async def test_delete_recipe_success(self, repository: RecipeRepository, sample_recipe_create: RecipeCreate) -> None:
+    async def test_delete_recipe_success(self, repository: RecipeRepository, sample_recipe: Recipe) -> None:
         """Test deleting a recipe successfully."""
-        # Create a mock recipe with an ID
-        mock_recipe = MagicMock(spec=Recipe)
-        mock_recipe.id = PydanticObjectId()
-        
         with patch.object(repository, 'get_by_id') as mock_get:
-            with patch.object(mock_recipe, 'delete') as mock_delete:
-                mock_get.return_value = mock_recipe
+            with patch.object(sample_recipe, 'delete') as mock_delete:
+                mock_get.return_value = sample_recipe
                 mock_delete.return_value = None
                 
-                result = await repository.delete(mock_recipe.id)
+                result = await repository.delete(sample_recipe.id)
                 
                 assert result is True
-                mock_get.assert_called_once_with(mock_recipe.id)
+                mock_get.assert_called_once_with(sample_recipe.id)
                 mock_delete.assert_called_once()
     
     @pytest.mark.asyncio
@@ -259,14 +241,14 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_search_recipes_text_search(self, repository: RecipeRepository) -> None:
         """Test searching recipes using text search."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Chocolate Cake", description="Delicious cake")]
+        mock_recipes = [Recipe(title="Chocolate Cake", description="Delicious cake")]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
             mock_query.skip.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.search("chocolate")
@@ -278,7 +260,7 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_search_recipes_fallback_to_regex(self, repository: RecipeRepository) -> None:
         """Test searching recipes falls back to regex when text search fails."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Chocolate Cake")]
+        mock_recipes = [Recipe(title="Chocolate Cake")]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             # First call (text search) returns empty, second call (regex) returns results
@@ -301,7 +283,7 @@ class TestRecipeRepository:
         
         with patch('app.models.recipe.Recipe.aggregate') as mock_aggregate:
             mock_agg = MagicMock()
-            mock_agg.to_list = AsyncMock(return_value=mock_result)
+            mock_agg.to_list.return_value = mock_result
             mock_aggregate.return_value = mock_agg
             
             result = await repository.get_all_tags()
@@ -314,7 +296,7 @@ class TestRecipeRepository:
         """Test counting recipes without filters."""
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
-            mock_query.count = AsyncMock(return_value=42)
+            mock_query.count.return_value = 42
             mock_find.return_value = mock_query
             
             result = await repository.count()
@@ -328,7 +310,7 @@ class TestRecipeRepository:
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.find.return_value = mock_query
-            mock_query.count = AsyncMock(return_value=10)
+            mock_query.count.return_value = 10
             mock_find.return_value = mock_query
             
             result = await repository.count(filters={"difficulty": "easy"})
@@ -339,12 +321,12 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_recipes_by_difficulty(self, repository: RecipeRepository) -> None:
         """Test getting recipes by difficulty level."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Easy Recipe", difficulty="easy")]
+        mock_recipes = [Recipe(title="Easy Recipe", difficulty="easy")]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_recipes_by_difficulty("easy")
@@ -356,12 +338,12 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_recipes_by_tags(self, repository: RecipeRepository) -> None:
         """Test getting recipes by tags."""
-        mock_recipes = [MagicMock(spec=Recipe, title="Vegetarian Recipe", tags=["vegetarian"])]
+        mock_recipes = [Recipe(title="Vegetarian Recipe", tags=["vegetarian"])]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_recipes_by_tags(["vegetarian"])
@@ -373,13 +355,13 @@ class TestRecipeRepository:
     @pytest.mark.asyncio
     async def test_get_recent_recipes(self, repository: RecipeRepository) -> None:
         """Test getting recent recipes."""
-        mock_recipes = [MagicMock(spec=Recipe, title=f"Recipe {i}") for i in range(5)]
+        mock_recipes = [Recipe(title=f"Recipe {i}") for i in range(5)]
         
         with patch('app.models.recipe.Recipe.find') as mock_find:
             mock_query = MagicMock()
             mock_query.sort.return_value = mock_query
             mock_query.limit.return_value = mock_query
-            mock_query.to_list = AsyncMock(return_value=mock_recipes)
+            mock_query.to_list.return_value = mock_recipes
             mock_find.return_value = mock_query
             
             result = await repository.get_recent_recipes(5)

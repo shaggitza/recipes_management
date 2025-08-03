@@ -485,7 +485,7 @@ class TestRecipeCreateModel:
         assert recipe.cook_time == 30
         assert recipe.servings == 4
         assert recipe.difficulty == "medium"
-        assert sorted(recipe.tags) == ["baking", "dessert"]
+        assert recipe.tags == ["dessert", "baking"]
         assert recipe.source.type == "website"
         assert recipe.images == ["https://example.com/image.jpg"]
         assert recipe.metadata == {"author": "Test Chef"}

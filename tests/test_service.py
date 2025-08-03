@@ -5,7 +5,7 @@ Tests business logic, validation, and error handling.
 import pytest
 from typing import List
 from unittest.mock import AsyncMock, Mock
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import HTTPException
 from beanie import PydanticObjectId
@@ -23,21 +23,8 @@ class MockRepository(BaseRepository):
         self.next_id = 1
     
     async def create(self, data: RecipeCreate) -> Recipe:
-        # Create a mock recipe instead of a real Recipe document
-        recipe_data = data.model_dump()
-        recipe_data['id'] = PydanticObjectId()
-        recipe_data['created_at'] = datetime.now(timezone.utc)
-        recipe_data['updated_at'] = datetime.now(timezone.utc)
-        
-        # Convert MealTime enums to strings for compatibility
-        if 'meal_times' in recipe_data:
-            recipe_data['meal_times'] = [mt.value if hasattr(mt, 'value') else mt for mt in recipe_data['meal_times']]
-        
-        # Use Mock instead of Recipe to avoid database initialization issues
-        recipe = Mock(spec=Recipe)
-        for key, value in recipe_data.items():
-            setattr(recipe, key, value)
-        
+        recipe = Recipe(**data.model_dump())
+        recipe.id = PydanticObjectId()
         self.recipes[str(recipe.id)] = recipe
         return recipe
     
@@ -95,20 +82,6 @@ class MockRepository(BaseRepository):
             reverse=True
         )
         return recipes_list[:limit]
-    
-    async def get_all_meal_times(self) -> List[str]:
-        """Get all unique meal times from recipes"""
-        meal_times = set()
-        for recipe in self.recipes.values():
-            meal_times.update(recipe.meal_times)
-        return sorted(list(meal_times))
-    
-    async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
-        """Get recipes that contain any of the specified meal times"""
-        return [
-            recipe for recipe in self.recipes.values()
-            if any(mt in recipe.meal_times for mt in meal_times)
-        ]
 
 
 class TestRecipeService:
