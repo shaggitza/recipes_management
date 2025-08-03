@@ -7,7 +7,6 @@ from typing import Optional, List
 import langfun as lf
 
 from .models import RecipeExtraction
-from app.models.recipe import MealTime
 
 logger = logging.getLogger("app.ai.extractor")
 
@@ -83,7 +82,7 @@ Rules:
 - Set difficulty as "easy", "medium", or "hard"
 - Extract meaningful tags (cuisine, meal type, dietary restrictions, etc.)
 - tags should only contain one or two words, it should not repeat something that is allready in other fields, use country, origin, type of food, and other categorizations
-- For meal_times, use only these values: {', '.join([f'"{mt.value}"' for mt in MealTime])}
+- For meal_times, use only these values: "breakfast", "lunch", "dinner", "snack", "brunch", "dessert"
 - Include clear step-by-step instructions and split one to many if needed
 - title should be a clasic name of the recipe, not a description, nor adjectives should be used
 - For images, set relevance_score (0.0-1.0) and is_primary (true for main image)
