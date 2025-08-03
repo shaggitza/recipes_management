@@ -75,17 +75,20 @@ Please select the most relevant recipe images and include them in the images fie
         return f"""Extract comprehensive recipe information from this web content.
 
 Rules:
-- Translate any non-English text to English
+- Translate any non-Romanian text to Romanian
+- never send None where a value it's required (amount, name, title, etc.)
+- never write something that is not expected by the model
 - Estimate prep_time and cook_time if not explicitly stated (in minutes)
 - Set difficulty as "easy", "medium", or "hard"
 - Extract meaningful tags (cuisine, meal type, dietary restrictions, etc.)
+- tags should only contain one or two words, it should not repeat something that is allready in other fields, use country, origin, type of food, and other categorizations
 - For meal_times, use only these values: "breakfast", "lunch", "dinner", "snack", "brunch", "dessert"
-- Include clear step-by-step instructions
+- Include clear step-by-step instructions and split one to many if needed
+- title should be a clasic name of the recipe, not a description, nor adjectives should be used
 - For images, set relevance_score (0.0-1.0) and is_primary (true for main image)
 
 Web Content:
-{content[:4000]}  # Limit content for token efficiency
-{images_section}
+{content}  # Limit content for token efficiency
 """
 
     def _format_images_for_prompt(self, images: List[dict]) -> str:
