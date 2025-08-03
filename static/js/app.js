@@ -218,6 +218,7 @@ class RecipeManager {
         // Dynamic form elements
         safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
         safeAddEventListener('addInstruction', 'click', () => this.addInstructionRow());
+        safeAddEventListener('addApplianceSetting', 'click', () => this.addApplianceSettingRow());
 
         // Recipe detail actions
         safeAddEventListener('editRecipeBtn', 'click', () => this.editCurrentRecipe());
@@ -560,6 +561,15 @@ class RecipeManager {
                 </div>
             ` : ''}
 
+            ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
+                <div class="detail-section">
+                    <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                    <div class="appliance-settings-display">
+                        ${recipe.appliance_settings.map(setting => this.renderApplianceSettingDetail(setting)).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
             ${recipe.source && (recipe.source.url || recipe.source.name) ? `
                 <div class="detail-section">
                     <h3><i class="fas fa-link"></i> Source</h3>
@@ -570,6 +580,77 @@ class RecipeManager {
                 </div>
             ` : ''}
         `;
+    }
+
+    renderApplianceSettingDetail(setting) {
+        const applianceTypeLabel = this.getApplianceTypeLabel(setting.appliance_type);
+        let settingDetails = `<div class="appliance-setting-detail">
+            <div class="appliance-setting-title">
+                <i class="fas fa-fire"></i> ${applianceTypeLabel}
+            </div>
+            <div class="appliance-setting-info">`;
+
+        // Add specific fields based on appliance type
+        if (setting.flame_level) {
+            settingDetails += `<span><strong>Flame Level:</strong> ${this.escapeHtml(setting.flame_level)}</span>`;
+        }
+        if (setting.heat_level) {
+            settingDetails += `<span><strong>Heat Level:</strong> ${this.escapeHtml(setting.heat_level)}</span>`;
+        }
+        if (setting.temperature_fahrenheit) {
+            settingDetails += `<span><strong>Temperature:</strong> ${setting.temperature_fahrenheit}°F</span>`;
+        }
+        if (setting.power_level) {
+            settingDetails += `<span><strong>Power Level:</strong> ${setting.power_level}/10</span>`;
+        }
+        if (setting.duration_minutes) {
+            settingDetails += `<span><strong>Duration:</strong> ${setting.duration_minutes} min</span>`;
+        }
+        if (setting.heat_zone) {
+            settingDetails += `<span><strong>Heat Zone:</strong> ${this.escapeHtml(setting.heat_zone)}</span>`;
+        }
+        if (setting.rack_position) {
+            settingDetails += `<span><strong>Rack Position:</strong> ${this.escapeHtml(setting.rack_position)}</span>`;
+        }
+        if (setting.lid_position) {
+            settingDetails += `<span><strong>Lid Position:</strong> ${this.escapeHtml(setting.lid_position)}</span>`;
+        }
+        if (setting.preheat_required !== undefined) {
+            settingDetails += `<span><strong>Preheat:</strong> ${setting.preheat_required ? 'Yes' : 'No'}</span>`;
+        }
+        if (setting.convection !== undefined) {
+            settingDetails += `<span><strong>Convection:</strong> ${setting.convection ? 'Yes' : 'No'}</span>`;
+        }
+        if (setting.shake_interval_minutes) {
+            settingDetails += `<span><strong>Shake Every:</strong> ${setting.shake_interval_minutes} min</span>`;
+        }
+
+        settingDetails += `</div>`;
+
+        // Add utensils if any
+        if (setting.utensils && setting.utensils.length > 0) {
+            settingDetails += `<div class="appliance-utensils">
+                <strong>Utensils:</strong>
+                <ul>
+                    ${setting.utensils.map(utensil => {
+                        let utensilText = this.escapeHtml(utensil.type);
+                        if (utensil.size) utensilText += ` (${this.escapeHtml(utensil.size)})`;
+                        if (utensil.material) utensilText += ` - ${this.escapeHtml(utensil.material)}`;
+                        return `<li>${utensilText}</li>`;
+                    }).join('')}
+                </ul>
+            </div>`;
+        }
+
+        // Add notes if any
+        if (setting.notes) {
+            settingDetails += `<div class="appliance-notes">
+                <strong>Notes:</strong> ${this.escapeHtml(setting.notes)}
+            </div>`;
+        }
+
+        settingDetails += `</div>`;
+        return settingDetails;
     }
 
     showAddModal() {
@@ -679,6 +760,9 @@ class RecipeManager {
         // Instructions
         recipe.instructions = this.getInstructionsFromForm();
         
+        // Appliance Settings
+        recipe.appliance_settings = this.getApplianceSettingsFromForm();
+        
         // Images
         recipe.images = this.uploadedImages || [];
         
@@ -720,6 +804,76 @@ class RecipeManager {
         return instructions;
     }
 
+    getApplianceSettingsFromForm() {
+        const applianceSettings = [];
+        const settingItems = document.querySelectorAll('#applianceSettingsContainer .appliance-setting-item');
+        
+        settingItems.forEach(item => {
+            const applianceType = item.dataset.applianceType;
+            const setting = { appliance_type: applianceType };
+            
+            // Get all input/select/textarea fields
+            const fields = item.querySelectorAll('.appliance-setting-fields input, .appliance-setting-fields select, .appliance-setting-fields textarea');
+            
+            fields.forEach(field => {
+                const name = field.name;
+                let value = field.value.trim();
+                
+                if (!value || name.startsWith('utensil_')) return; // Skip empty and utensil fields (handled separately)
+                
+                // Convert specific field types
+                if (['temperature_fahrenheit', 'duration_minutes', 'power_level', 'shake_interval_minutes'].includes(name)) {
+                    value = parseInt(value);
+                    if (isNaN(value)) return;
+                } else if (['preheat_required', 'convection'].includes(name)) {
+                    value = value === 'true';
+                }
+                
+                setting[name] = value;
+            });
+            
+            // Get utensils
+            const utensils = [];
+            const utensilItems = item.querySelectorAll('.utensil-item');
+            
+            utensilItems.forEach(utensilItem => {
+                const type = utensilItem.querySelector('input[name="utensil_type"]')?.value.trim();
+                const size = utensilItem.querySelector('input[name="utensil_size"]')?.value.trim();
+                const material = utensilItem.querySelector('input[name="utensil_material"]')?.value.trim();
+                
+                if (type) {
+                    const utensil = { type };
+                    if (size) utensil.size = size;
+                    if (material) utensil.material = material;
+                    utensils.push(utensil);
+                }
+            });
+            
+            setting.utensils = utensils;
+            
+            // Only add if we have required fields
+            if (this.validateApplianceSetting(setting)) {
+                applianceSettings.push(setting);
+            }
+        });
+        
+        return applianceSettings;
+    }
+
+    validateApplianceSetting(setting) {
+        const type = setting.appliance_type;
+        
+        // Check required fields based on appliance type
+        if (type === 'gas_burner' && !setting.flame_level) return false;
+        if (['electric_stove', 'stove'].includes(type) && !setting.heat_level) return false;
+        if (['airfryer', 'electric_grill', 'oven'].includes(type) && !setting.temperature_fahrenheit) return false;
+        if (type === 'induction_stove' && !setting.power_level) return false;
+        if (['airfryer', 'oven'].includes(type) && !setting.duration_minutes) return false;
+        if (type === 'charcoal_grill' && !setting.heat_zone) return false;
+        
+        return true;
+    }
+
     populateForm(recipe) {
         // Basic fields
         document.getElementById('title').value = recipe.title || '';
@@ -746,6 +900,9 @@ class RecipeManager {
         
         // Instructions
         this.populateInstructions(recipe.instructions || []);
+        
+        // Appliance Settings
+        this.populateApplianceSettings(recipe.appliance_settings || []);
         
         // Images
         this.populateImages(recipe.images || []);
@@ -775,6 +932,15 @@ class RecipeManager {
                 this.addInstructionRow(inst);
             });
         }
+    }
+
+    populateApplianceSettings(applianceSettings) {
+        const container = document.getElementById('applianceSettingsContainer');
+        container.innerHTML = '';
+        
+        applianceSettings.forEach(setting => {
+            this.addApplianceSettingRow(setting);
+        });
     }
 
     populateImages(images) {
@@ -868,6 +1034,271 @@ class RecipeManager {
         container.appendChild(row);
     }
 
+    addApplianceSettingRow(applianceSetting = null) {
+        const select = document.getElementById('applianceTypeSelect');
+        const applianceType = applianceSetting?.appliance_type || select.value;
+        
+        if (!applianceType) {
+            alert('Please select an appliance type first.');
+            return;
+        }
+
+        const container = document.getElementById('applianceSettingsContainer');
+        const applianceDiv = document.createElement('div');
+        applianceDiv.className = 'appliance-setting-item';
+        applianceDiv.dataset.applianceType = applianceType;
+
+        const applianceTypeLabel = this.getApplianceTypeLabel(applianceType);
+        const fieldsHtml = this.generateApplianceFieldsHtml(applianceType, applianceSetting);
+
+        applianceDiv.innerHTML = `
+            <div class="appliance-setting-header">
+                <span class="appliance-setting-type">${applianceTypeLabel}</span>
+                <button type="button" class="remove-appliance-setting">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+            <div class="appliance-setting-fields">
+                ${fieldsHtml}
+            </div>
+        `;
+
+        // Add remove functionality
+        applianceDiv.querySelector('.remove-appliance-setting').addEventListener('click', () => {
+            applianceDiv.remove();
+        });
+
+        // Add utensil functionality
+        this.bindApplianceUtensilEvents(applianceDiv);
+
+        container.appendChild(applianceDiv);
+        
+        // Reset select
+        if (!applianceSetting) {
+            select.value = '';
+        }
+    }
+
+    getApplianceTypeLabel(type) {
+        const labels = {
+            'gas_burner': 'Gas Burner',
+            'airfryer': 'Airfryer',
+            'electric_grill': 'Electric Grill',
+            'electric_stove': 'Electric Stove',
+            'induction_stove': 'Induction Stove',
+            'oven': 'Oven',
+            'charcoal_grill': 'Charcoal Grill',
+            'stove': 'General Stove'
+        };
+        return labels[type] || type;
+    }
+
+    generateApplianceFieldsHtml(applianceType, applianceSetting = null) {
+        const setting = applianceSetting || {};
+        let fieldsHtml = '';
+
+        // Common fields
+        if (['gas_burner', 'electric_stove', 'stove'].includes(applianceType)) {
+            const heatField = applianceType === 'gas_burner' ? 'flame_level' : 'heat_level';
+            const label = applianceType === 'gas_burner' ? 'Flame Level' : 'Heat Level';
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>${label} *</label>
+                    <input type="text" name="${heatField}" value="${setting[heatField] || ''}" 
+                           placeholder="e.g., medium-high" required>
+                </div>
+            `;
+        }
+
+        if (['airfryer', 'electric_grill', 'oven'].includes(applianceType)) {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Temperature (°F) *</label>
+                    <input type="number" name="temperature_fahrenheit" value="${setting.temperature_fahrenheit || ''}" 
+                           min="100" max="550" placeholder="350" required>
+                </div>
+            `;
+        }
+
+        if (applianceType === 'induction_stove') {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Power Level (1-10) *</label>
+                    <input type="number" name="power_level" value="${setting.power_level || ''}" 
+                           min="1" max="10" placeholder="5" required>
+                </div>
+                <div class="appliance-field">
+                    <label>Temperature (°F)</label>
+                    <input type="number" name="temperature_fahrenheit" value="${setting.temperature_fahrenheit || ''}" 
+                           min="100" max="500" placeholder="350">
+                </div>
+            `;
+        }
+
+        // Duration field for most appliances
+        if (!['charcoal_grill'].includes(applianceType) || setting.duration_minutes) {
+            const required = ['airfryer', 'oven'].includes(applianceType) ? 'required' : '';
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Duration (minutes)${required ? ' *' : ''}</label>
+                    <input type="number" name="duration_minutes" value="${setting.duration_minutes || ''}" 
+                           min="1" max="1440" placeholder="15" ${required}>
+                </div>
+            `;
+        }
+
+        // Special fields for specific appliances
+        if (applianceType === 'airfryer') {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Preheat Required</label>
+                    <select name="preheat_required">
+                        <option value="true" ${setting.preheat_required !== false ? 'selected' : ''}>Yes</option>
+                        <option value="false" ${setting.preheat_required === false ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="appliance-field">
+                    <label>Shake Interval (minutes)</label>
+                    <input type="number" name="shake_interval_minutes" value="${setting.shake_interval_minutes || ''}" 
+                           min="1" max="30" placeholder="5">
+                </div>
+            `;
+        }
+
+        if (applianceType === 'electric_grill') {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Preheat Required</label>
+                    <select name="preheat_required">
+                        <option value="true" ${setting.preheat_required !== false ? 'selected' : ''}>Yes</option>
+                        <option value="false" ${setting.preheat_required === false ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        if (applianceType === 'oven') {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Preheat Required</label>
+                    <select name="preheat_required">
+                        <option value="true" ${setting.preheat_required !== false ? 'selected' : ''}>Yes</option>
+                        <option value="false" ${setting.preheat_required === false ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="appliance-field">
+                    <label>Rack Position</label>
+                    <select name="rack_position">
+                        <option value="">Select position...</option>
+                        <option value="top" ${setting.rack_position === 'top' ? 'selected' : ''}>Top</option>
+                        <option value="middle" ${setting.rack_position === 'middle' ? 'selected' : ''}>Middle</option>
+                        <option value="bottom" ${setting.rack_position === 'bottom' ? 'selected' : ''}>Bottom</option>
+                    </select>
+                </div>
+                <div class="appliance-field">
+                    <label>Convection</label>
+                    <select name="convection">
+                        <option value="false" ${setting.convection !== true ? 'selected' : ''}>No</option>
+                        <option value="true" ${setting.convection === true ? 'selected' : ''}>Yes</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        if (applianceType === 'charcoal_grill') {
+            fieldsHtml += `
+                <div class="appliance-field">
+                    <label>Heat Zone *</label>
+                    <input type="text" name="heat_zone" value="${setting.heat_zone || ''}" 
+                           placeholder="e.g., direct high" required>
+                </div>
+                <div class="appliance-field">
+                    <label>Lid Position</label>
+                    <select name="lid_position">
+                        <option value="">Select position...</option>
+                        <option value="open" ${setting.lid_position === 'open' ? 'selected' : ''}>Open</option>
+                        <option value="closed" ${setting.lid_position === 'closed' ? 'selected' : ''}>Closed</option>
+                        <option value="vented" ${setting.lid_position === 'vented' ? 'selected' : ''}>Vented</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        // Notes field for all appliances
+        fieldsHtml += `
+            <div class="appliance-field">
+                <label>Notes</label>
+                <textarea name="notes" placeholder="Additional cooking notes...">${setting.notes || ''}</textarea>
+            </div>
+        `;
+
+        // Utensils section
+        fieldsHtml += this.generateUtensilsHtml(setting.utensils || []);
+
+        return fieldsHtml;
+    }
+
+    generateUtensilsHtml(utensils) {
+        let utensilsHtml = `
+            <div class="utensils-section">
+                <div class="utensils-header">
+                    <h4>Utensils</h4>
+                    <button type="button" class="add-utensil">
+                        <i class="fas fa-plus"></i> Add Utensil
+                    </button>
+                </div>
+                <div class="utensils-container">
+        `;
+
+        utensils.forEach(utensil => {
+            utensilsHtml += this.generateUtensilItemHtml(utensil);
+        });
+
+        utensilsHtml += `
+                </div>
+            </div>
+        `;
+
+        return utensilsHtml;
+    }
+
+    generateUtensilItemHtml(utensil = {}) {
+        return `
+            <div class="utensil-item">
+                <input type="text" name="utensil_type" value="${utensil.type || ''}" placeholder="Type (e.g., pan)">
+                <input type="text" name="utensil_size" value="${utensil.size || ''}" placeholder="Size (e.g., 12-inch)">
+                <input type="text" name="utensil_material" value="${utensil.material || ''}" placeholder="Material (e.g., non-stick)">
+                <button type="button" class="remove-utensil">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+    }
+
+    bindApplianceUtensilEvents(applianceDiv) {
+        const addUtensilBtn = applianceDiv.querySelector('.add-utensil');
+        const utensilsContainer = applianceDiv.querySelector('.utensils-container');
+
+        addUtensilBtn.addEventListener('click', () => {
+            const utensilDiv = document.createElement('div');
+            utensilDiv.innerHTML = this.generateUtensilItemHtml();
+            const utensilItem = utensilDiv.firstElementChild;
+            
+            utensilItem.querySelector('.remove-utensil').addEventListener('click', () => {
+                utensilItem.remove();
+            });
+
+            utensilsContainer.appendChild(utensilItem);
+        });
+
+        // Bind existing remove utensil events
+        utensilsContainer.querySelectorAll('.remove-utensil').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('.utensil-item').remove();
+            });
+        });
+    }
+
     updateInstructionPlaceholders() {
         const rows = document.querySelectorAll('#instructionsContainer .instruction-row');
         rows.forEach((row, index) => {
@@ -884,12 +1315,16 @@ class RecipeManager {
         // Reset dynamic sections
         const ingredientsContainer = document.getElementById('ingredientsContainer');
         const instructionsContainer = document.getElementById('instructionsContainer');
+        const applianceSettingsContainer = document.getElementById('applianceSettingsContainer');
         
         if (ingredientsContainer) {
             ingredientsContainer.innerHTML = '';
         }
         if (instructionsContainer) {
             instructionsContainer.innerHTML = '';
+        }
+        if (applianceSettingsContainer) {
+            applianceSettingsContainer.innerHTML = '';
         }
         
         // Clear image previews

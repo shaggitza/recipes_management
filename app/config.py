@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # Logging configuration
     log_level: str = "INFO"
-    use_structured_logging: bool = True
+    use_structured_logging: bool = False
     
     # Environment detection
     environment: str = "development"

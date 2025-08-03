@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, Literal
+from typing import List, Optional, Dict, Any, Literal, Union
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from beanie import Document, before_event, Insert, Update
@@ -30,6 +30,107 @@ class Source(BaseModel):
     name: Optional[str] = Field(None, max_length=200)
 
 
+class Utensil(BaseModel):
+    """Utensil information for appliances that require specific cookware"""
+    type: str = Field(..., min_length=1, max_length=50)  # e.g., "pan", "tray", "pot"
+    size: Optional[str] = Field(None, max_length=50)     # e.g., "12-inch", "large", "medium"
+    material: Optional[str] = Field(None, max_length=50) # e.g., "non-stick", "cast iron", "stainless steel"
+    notes: Optional[str] = Field(None, max_length=200)   # additional notes
+
+
+class GasBurnerSettings(BaseModel):
+    """Settings for gas burner cooking"""
+    appliance_type: Literal["gas_burner"] = "gas_burner"
+    flame_level: str = Field(..., max_length=50)  # e.g., "high", "medium-high", "medium", "low", "simmer"
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class AirfryerSettings(BaseModel):
+    """Settings for airfryer cooking"""
+    appliance_type: Literal["airfryer"] = "airfryer"
+    temperature_fahrenheit: int = Field(..., ge=100, le=450)
+    duration_minutes: int = Field(..., ge=1, le=180)
+    preheat_required: bool = Field(default=True)
+    shake_interval_minutes: Optional[int] = Field(None, ge=1, le=30)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class ElectricGrillSettings(BaseModel):
+    """Settings for electric grill with temperature control"""
+    appliance_type: Literal["electric_grill"] = "electric_grill"
+    temperature_fahrenheit: int = Field(..., ge=200, le=500)
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    preheat_required: bool = Field(default=True)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class ElectricStoveSettings(BaseModel):
+    """Settings for electric stove without temperature control"""
+    appliance_type: Literal["electric_stove"] = "electric_stove"
+    heat_level: str = Field(..., max_length=50)  # e.g., "high", "medium-high", "medium", "low"
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class InductionStoveSettings(BaseModel):
+    """Settings for electric induction stove"""
+    appliance_type: Literal["induction_stove"] = "induction_stove"
+    power_level: int = Field(..., ge=1, le=10)  # induction typically has power levels 1-10
+    temperature_fahrenheit: Optional[int] = Field(None, ge=100, le=500)
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class OvenSettings(BaseModel):
+    """Settings for kitchen oven"""
+    appliance_type: Literal["oven"] = "oven"
+    temperature_fahrenheit: int = Field(..., ge=170, le=550)
+    duration_minutes: int = Field(..., ge=1, le=1440)
+    preheat_required: bool = Field(default=True)
+    rack_position: Optional[str] = Field(None, max_length=50)  # e.g., "middle", "top", "bottom"
+    convection: bool = Field(default=False)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class CharcoalGrillSettings(BaseModel):
+    """Settings for charcoal grill"""
+    appliance_type: Literal["charcoal_grill"] = "charcoal_grill"
+    heat_zone: str = Field(..., max_length=50)  # e.g., "direct high", "indirect medium", "low and slow"
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    lid_position: Optional[str] = Field(None, max_length=50)  # e.g., "open", "closed", "vented"
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class GeneralStoveSettings(BaseModel):
+    """Settings for general stove (when specific type not known)"""
+    appliance_type: Literal["stove"] = "stove"
+    heat_level: str = Field(..., max_length=50)  # e.g., "high", "medium", "low"
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    utensils: List[Utensil] = Field(default_factory=list)
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+# Union type for all appliance settings
+ApplianceSettings = Union[
+    GasBurnerSettings,
+    AirfryerSettings,
+    ElectricGrillSettings,
+    ElectricStoveSettings,
+    InductionStoveSettings,
+    OvenSettings,
+    CharcoalGrillSettings,
+    GeneralStoveSettings
+]
+
+
 class Recipe(Document):
     """Recipe document with full type safety and proper Beanie patterns"""
     
@@ -52,6 +153,9 @@ class Recipe(Document):
     # Source and media
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list, max_length=10)
+    
+    # Appliance settings for different cooking methods
+    appliance_settings: List[ApplianceSettings] = Field(default_factory=list)
     
     # Timestamps - automatically managed
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -141,6 +245,7 @@ class RecipeCreate(BaseModel):
     meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list, max_length=10)
+    appliance_settings: List[ApplianceSettings] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator('meal_times')
@@ -188,6 +293,7 @@ class RecipeUpdate(BaseModel):
     meal_times: Optional[List[MealTime]] = Field(None, max_length=6)
     source: Optional[Source] = None
     images: Optional[List[str]] = Field(None, max_length=10)
+    appliance_settings: Optional[List[ApplianceSettings]] = None
     metadata: Optional[Dict[str, Any]] = None
 
     @field_validator('meal_times')
@@ -240,6 +346,7 @@ class RecipeResponse(BaseModel):
     meal_times: List[str] = Field(default_factory=list)
     source: Source = Field(default_factory=Source)
     images: List[str] = Field(default_factory=list)
+    appliance_settings: List[ApplianceSettings] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
     metadata: Dict[str, Any] = Field(default_factory=dict)

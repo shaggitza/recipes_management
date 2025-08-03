@@ -49,15 +49,9 @@ class SimpleRecipeExtractor:
             return recipe
             
         except Exception as e:
-            logger.error(f"Recipe extraction failed: {e}")
-            # Return a basic recipe object with error info
-            return RecipeExtraction(
-                title=f"Failed to extract recipe from {source_url}",
-                description=f"Extraction error: {str(e)}",
-                ingredients=[],
-                instructions=[],
-                tags=["extraction_error"]
-            )
+            error_msg = f"Recipe extraction failed: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def _create_extraction_prompt(self, content: str, images: Optional[List[dict]] = None) -> str:
         """Create a prompt for recipe extraction."""
@@ -87,9 +81,16 @@ Rules:
 - title should be a clasic name of the recipe, not a description, nor adjectives should be used
 - For images, set relevance_score (0.0-1.0) and is_primary (true for main image)
 
+Appliance Settings:
+- IMPORTANT: Generate appropriate appliance settings based on the cooking methods mentioned in the recipe
+- Choose from: gas_burner, airfryer, electric_grill, electric_stove, induction_stove, oven, charcoal_grill, stove
+- Include realistic temperature/heat levels, durations, and required utensils
+- Examples: If recipe mentions "bake at 350°F", add oven settings. If it says "fry in pan", add gas_burner or stove settings
+- For each appliance, specify appropriate utensils if mentioned (pans, trays, etc.)
+
 Web Content:
 {content}  # Limit content for token efficiency
-"""
+{images_section}"""
 
     def _format_images_for_prompt(self, images: List[dict]) -> str:
         """Format images for inclusion in the prompt."""

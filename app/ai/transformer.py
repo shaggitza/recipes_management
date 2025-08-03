@@ -4,7 +4,11 @@ import logging
 from typing import Optional, Literal
 from datetime import datetime, timezone
 
-from app.models.recipe import RecipeCreate, Ingredient, Source, MealTime
+from app.models.recipe import RecipeCreate, Ingredient, Source, MealTime, ApplianceSettings, Utensil
+from app.models.recipe import (
+    OvenSettings, GasBurnerSettings, AirfryerSettings, ElectricGrillSettings,
+    InductionStoveSettings, CharcoalGrillSettings, ElectricStoveSettings, GeneralStoveSettings
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +48,7 @@ class RecipeTransformer:
                     "tags": extracted_recipe.tags,
                     "meal_times": extracted_recipe.meal_times,
                     "source_url": getattr(extracted_recipe, "source_url", None),
+                    "appliance_settings": getattr(extracted_recipe, "appliance_settings", []),
                 }
 
             logger.info(f"Transforming extracted recipe: {recipe_data['title']}")
@@ -53,6 +58,9 @@ class RecipeTransformer:
             
             # Transform instructions
             instructions = self._transform_instructions(recipe_data["instructions"])
+            
+            # Transform appliance settings
+            appliance_settings = self._transform_appliance_settings(recipe_data.get("appliance_settings", []))
             
             # Create source information
             source = Source(
@@ -78,6 +86,7 @@ class RecipeTransformer:
                 meal_times=self._clean_meal_times(recipe_data.get("meal_times", [])),
                 source=source,
                 images=[],  # No images extracted yet
+                appliance_settings=appliance_settings,
                 metadata={
                     "ai_extracted": True,
                     "extraction_timestamp": datetime.now(timezone.utc).isoformat(),
@@ -139,6 +148,144 @@ class RecipeTransformer:
                 instructions.append(cleaned)
         
         return instructions
+
+    def _transform_appliance_settings(self, extracted_settings: list) -> list[ApplianceSettings]:
+        """Transform extracted appliance settings to ApplianceSettings models."""
+        appliance_settings = []
+
+        for ext_setting in extracted_settings or []:
+            try:
+                # Handle both dict and object formats
+                if isinstance(ext_setting, dict):
+                    setting_dict = ext_setting
+                else:
+                    # Assume it's already an appliance settings object
+                    setting_dict = ext_setting.__dict__ if hasattr(ext_setting, '__dict__') else {}
+
+                appliance_type = setting_dict.get("appliance_type", "")
+                if not appliance_type:
+                    logger.warning("Skipping appliance setting with no type")
+                    continue
+
+                # Transform utensils if present
+                utensils = self._transform_utensils(setting_dict.get("utensils", []))
+
+                # Create the appropriate appliance setting based on type
+                setting = self._create_appliance_setting(appliance_type, setting_dict, utensils)
+                if setting:
+                    appliance_settings.append(setting)
+                    
+            except Exception as e:
+                appliance_type = (
+                    ext_setting.get("appliance_type", "unknown")
+                    if isinstance(ext_setting, dict)
+                    else getattr(ext_setting, "appliance_type", "unknown")
+                )
+                logger.warning(f"Skipping invalid appliance setting {appliance_type}: {e}")
+                continue
+
+        return appliance_settings
+
+    def _transform_utensils(self, extracted_utensils: list) -> list[Utensil]:
+        """Transform extracted utensils to Utensil models."""
+        utensils = []
+        
+        for ext_utensil in extracted_utensils or []:
+            try:
+                if isinstance(ext_utensil, dict):
+                    utensil_data = ext_utensil
+                else:
+                    utensil_data = ext_utensil.__dict__ if hasattr(ext_utensil, '__dict__') else {}
+                
+                utensil_type = utensil_data.get("type", "")
+                if utensil_type:
+                    utensil = Utensil(
+                        type=utensil_type[:50],  # Limit length
+                        size=utensil_data.get("size", "")[:50] if utensil_data.get("size") else None,
+                        material=utensil_data.get("material", "")[:50] if utensil_data.get("material") else None,
+                        notes=utensil_data.get("notes", "")[:200] if utensil_data.get("notes") else None,
+                    )
+                    utensils.append(utensil)
+            except Exception as e:
+                logger.warning(f"Skipping invalid utensil: {e}")
+                continue
+        
+        return utensils
+
+    def _create_appliance_setting(self, appliance_type: str, setting_dict: dict, utensils: list[Utensil]) -> ApplianceSettings:
+        """Create the appropriate appliance setting model based on type."""
+        try:
+            if appliance_type == "oven":
+                return OvenSettings(
+                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 350),
+                    duration_minutes=setting_dict.get("duration_minutes", 30),
+                    preheat_required=setting_dict.get("preheat_required", True),
+                    rack_position=setting_dict.get("rack_position"),
+                    convection=setting_dict.get("convection", False),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "gas_burner":
+                return GasBurnerSettings(
+                    flame_level=setting_dict.get("flame_level", "medium"),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "airfryer":
+                return AirfryerSettings(
+                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 375),
+                    duration_minutes=setting_dict.get("duration_minutes", 15),
+                    preheat_required=setting_dict.get("preheat_required", True),
+                    shake_interval_minutes=setting_dict.get("shake_interval_minutes"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "electric_grill":
+                return ElectricGrillSettings(
+                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 400),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    preheat_required=setting_dict.get("preheat_required", True),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "induction_stove":
+                return InductionStoveSettings(
+                    power_level=setting_dict.get("power_level", 5),
+                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit"),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "charcoal_grill":
+                return CharcoalGrillSettings(
+                    heat_zone=setting_dict.get("heat_zone", "medium"),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    lid_position=setting_dict.get("lid_position"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "electric_stove":
+                return ElectricStoveSettings(
+                    heat_level=setting_dict.get("heat_level", "medium"),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            elif appliance_type == "stove":
+                return GeneralStoveSettings(
+                    heat_level=setting_dict.get("heat_level", "medium"),
+                    duration_minutes=setting_dict.get("duration_minutes"),
+                    utensils=utensils,
+                    notes=setting_dict.get("notes")
+                )
+            else:
+                logger.warning(f"Unknown appliance type: {appliance_type}")
+                return None
+                
+        except Exception as e:
+            logger.warning(f"Failed to create {appliance_type} setting: {e}")
+            return None
 
     def _clean_title(self, title: str) -> str:
         """Clean and validate recipe title."""

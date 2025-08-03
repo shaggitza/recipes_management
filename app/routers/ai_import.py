@@ -39,6 +39,7 @@ class ImportStatusResponse(BaseModel):
     attempts: int
     timestamp: str
     extraction_metadata: Optional[Dict[str, Any]] = None
+    langfun_recipe_dict: Optional[Dict[str, Any]] = None
 
 
 class BatchImportResponse(BaseModel):
@@ -117,7 +118,8 @@ async def import_recipe(
             url=result.url or url_str,
             attempts=result.attempts,
             timestamp=result.timestamp.isoformat(),
-            extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None
+            extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None,
+            langfun_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
         )
         
         if result.success:
@@ -210,7 +212,8 @@ async def batch_import_recipes(
                 url=result.url or url,
                 attempts=result.attempts,
                 timestamp=result.timestamp.isoformat(),
-                extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None
+                extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None,
+                langfun_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
             )
             
             if result.success:

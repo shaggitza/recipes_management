@@ -182,10 +182,16 @@ class RecipeImporter:
             if content and len(content.strip()) > 100:  # Minimum content length
                 return content, images
             else:
-                logger.warning(f"Scraped content too short or empty for {url}")
+                error_msg = f"Scraped content too short or empty for {url}"
+                logger.warning(error_msg)
+                if attempt >= self.max_retries:
+                    raise ValueError(error_msg)
                 return None
         except Exception as e:
-            logger.error(f"Scraping error on attempt {attempt}: {e}")
+            error_msg = f"Scraping error on attempt {attempt}: {e}"
+            logger.error(error_msg)
+            if attempt >= self.max_retries:
+                raise RuntimeError(error_msg) from e
             return None
 
     async def _extract_with_retry(self, content: str, images: List[dict], url: str, attempt: int) -> RecipeExtractionResult:
@@ -194,11 +200,14 @@ class RecipeImporter:
             logger.debug(f"Extraction attempt {attempt} for {url}")
             return await self.extractor.extract_recipe(content, url, images)
         except Exception as e:
-            logger.error(f"Extraction error on attempt {attempt}: {e}")
+            error_msg = f"Extraction error on attempt {attempt}: {e}"
+            logger.error(error_msg)
+            if attempt >= self.max_retries:
+                raise RuntimeError(error_msg) from e
             return RecipeExtractionResult(
                 success=False,
                 recipe=None,
-                error=f"Extraction failed: {str(e)}",
+                error=str(e),
                 source_url=url
             )
 
@@ -211,7 +220,10 @@ class RecipeImporter:
         """Transform extracted data with error handling."""
         try:
             if not extracted_recipe:
-                logger.error(f"No extracted recipe to transform on attempt {attempt}")
+                error_msg = f"No extracted recipe to transform on attempt {attempt}"
+                logger.error(error_msg)
+                if attempt >= self.max_retries:
+                    raise ValueError(error_msg)
                 return None
             
             logger.debug(f"Transformation attempt {attempt}")
@@ -225,11 +237,17 @@ class RecipeImporter:
             if self.transformer.validate_recipe_create(recipe_create):
                 return recipe_create
             else:
-                logger.error(f"Recipe validation failed on attempt {attempt}")
+                error_msg = f"Recipe validation failed on attempt {attempt}"
+                logger.error(error_msg)
+                if attempt >= self.max_retries:
+                    raise ValueError(error_msg)
                 return None
                 
         except Exception as e:
-            logger.error(f"Transformation error on attempt {attempt}: {e}")
+            error_msg = f"Transformation error on attempt {attempt}: {e}"
+            logger.error(error_msg)
+            if attempt >= self.max_retries:
+                raise RuntimeError(error_msg) from e
             return None
 
     async def _save_with_retry(self, recipe_create: RecipeCreate, attempt: int) -> Optional[Recipe]:
@@ -239,7 +257,10 @@ class RecipeImporter:
             recipe = await self.recipe_repository.create(recipe_create)
             return recipe
         except Exception as e:
-            logger.error(f"Database save error on attempt {attempt}: {e}")
+            error_msg = f"Database save error on attempt {attempt}: {e}"
+            logger.error(error_msg)
+            if attempt >= self.max_retries:
+                raise RuntimeError(error_msg) from e
             return None
 
     async def batch_import(
