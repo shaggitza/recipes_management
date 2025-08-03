@@ -13,13 +13,13 @@ class Ingredient(pg.Object):
 
 
 class ExtractedImage(pg.Object):
-    """Extracted image with metadata."""
+    """Simplified extracted image - kept for compatibility but not used."""
 
     url: str
     alt_text: Optional[str] = None
     title: Optional[str] = None
     relevance_score: Optional[float] = None
-    is_primary: bool  # Remove default - let AI decide
+    is_primary: bool = False  # Default to False since not used
 
 
 class Utensil(pg.Object):
@@ -37,7 +37,7 @@ class GasBurnerSettings(pg.Object):
     appliance_type: Literal["gas_burner"] = "gas_burner"
     flame_level: str  # e.g., "high", "medium-high", "medium", "low", "simmer"
     duration_minutes: Optional[int] = None
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -47,9 +47,9 @@ class AirfryerSettings(pg.Object):
     appliance_type: Literal["airfryer"] = "airfryer"
     temperature_celsius: int
     duration_minutes: int
-    preheat_required: bool  # Remove default - let AI decide
+    preheat_required: bool = True  # Default to True
     shake_interval_minutes: Optional[int] = None
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -59,8 +59,8 @@ class ElectricGrillSettings(pg.Object):
     appliance_type: Literal["electric_grill"] = "electric_grill"
     temperature_celsius: int
     duration_minutes: Optional[int] = None
-    preheat_required: bool  # Remove default - let AI decide
-    utensils: List[Utensil]  # Remove default - let AI populate
+    preheat_required: bool = True  # Default to True
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -70,7 +70,7 @@ class ElectricStoveSettings(pg.Object):
     appliance_type: Literal["electric_stove"] = "electric_stove"
     heat_level: str  # e.g., "high", "medium-high", "medium", "low"
     duration_minutes: Optional[int] = None
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -81,7 +81,7 @@ class InductionStoveSettings(pg.Object):
     power_level: int  # induction typically has power levels 1-10
     temperature_celsius: Optional[int] = None
     duration_minutes: Optional[int] = None
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -91,10 +91,10 @@ class OvenSettings(pg.Object):
     appliance_type: Literal["oven"] = "oven"
     temperature_celsius: int
     duration_minutes: int
-    preheat_required: bool  # Remove default - let AI decide
+    preheat_required: bool = True  # Default to True
     rack_position: Optional[str] = None  # e.g., "middle", "top", "bottom"
-    convection: bool  # Remove default - let AI decide
-    utensils: List[Utensil]  # Remove default - let AI populate
+    convection: bool = False  # Default to False
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -105,7 +105,7 @@ class CharcoalGrillSettings(pg.Object):
     heat_zone: str  # e.g., "direct high", "indirect medium", "low and slow"
     duration_minutes: Optional[int] = None
     lid_position: Optional[str] = None  # e.g., "open", "closed", "vented"
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -115,7 +115,7 @@ class GeneralStoveSettings(pg.Object):
     appliance_type: Literal["stove"] = "stove"
     heat_level: str  # e.g., "high", "medium", "low"
     duration_minutes: Optional[int] = None
-    utensils: List[Utensil]  # Remove default - let AI populate
+    utensils: List[Utensil] = []  # Default to empty list
     notes: Optional[str] = None
 
 
@@ -124,17 +124,17 @@ class RecipeExtraction(pg.Object):
 
     title: str
     description: Optional[str] = None
-    ingredients: List[Ingredient]  # Remove default - let AI populate
-    instructions: List[str]  # Remove default - let AI populate
+    ingredients: List[Ingredient] = []  # Default to empty list
+    instructions: List[str] = []  # Default to empty list
     prep_time: Optional[int] = None
     cook_time: Optional[int] = None
     servings: Optional[int] = None
     difficulty: Optional[str] = None
-    tags: List[str]  # Remove default - let AI populate
+    tags: List[str] = []  # Default to empty list
     meal_times: List[
         Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
-    ]  # Remove default - let AI populate
-    images: List[ExtractedImage]  # Remove default - let AI populate
+    ] = []  # Default to empty list
+    images: List[ExtractedImage] = []  # Always empty in simplified version
     source_url: Optional[str] = None
     # Properly typed appliance settings list with Union types for langfun
     appliance_settings: List[Union[
@@ -146,7 +146,7 @@ class RecipeExtraction(pg.Object):
         OvenSettings,
         CharcoalGrillSettings,
         GeneralStoveSettings
-    ]]  # Remove default - let AI populate with proper type information
+    ]] = []  # Default to empty list
 
 
 # Helper function to create appliance settings choice for PyGlove

@@ -22,7 +22,7 @@ from app.routers import ai_import
 # Setup logging for production with structured output
 setup_logging(
     log_level=settings.log_level,
-    use_structured=True  # Always use structured logging in production
+    use_structured=False,  # Always use structured logging in production
 )
 
 logger = logging.getLogger("app.production")

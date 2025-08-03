@@ -339,7 +339,7 @@ async def get_supported_sources():
             "structured_data": "Websites with JSON-LD recipe data work best",
             "html_parsing": "Most recipe websites are supported with fallback parsing",
             "languages": "Content is automatically translated to English",
-            "images": "Intelligent image extraction with AI analysis"
+            "images": "Image extraction simplified - images field remains empty"
         },
         "limitations": [
             "Dynamic content loaded by JavaScript may not be captured",

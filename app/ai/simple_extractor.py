@@ -22,12 +22,12 @@ class SimpleRecipeExtractor:
 
     async def extract_recipe(self, content: str, source_url: str, images: Optional[List[dict]] = None) -> RecipeExtraction:
         """
-        Extract recipe data from web content using langfun.
+        Extract recipe data from web content using langfun - simplified without image processing.
         
         Args:
             content: Scraped web content
             source_url: Original URL  
-            images: Optional list of images from the page
+            images: Optional list of images from the page (ignored)
             
         Returns:
             RecipeExtraction object with extracted data
@@ -35,8 +35,8 @@ class SimpleRecipeExtractor:
         try:
             logger.info(f"Extracting recipe from content (length: {len(content)})")
             
-            # Create prompt for recipe extraction
-            prompt = self._create_extraction_prompt(content, images)
+            # Create simplified prompt without image processing
+            prompt = self._create_extraction_prompt(content)
             
             # Use langfun to extract recipe data
             recipe = lf.query(
@@ -53,19 +53,9 @@ class SimpleRecipeExtractor:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
-    def _create_extraction_prompt(self, content: str, images: Optional[List[dict]] = None) -> str:
-        """Create a prompt for recipe extraction."""
+    def _create_extraction_prompt(self, content: str) -> str:
+        """Create a simplified prompt for recipe extraction without image processing."""
         
-        images_section = ""
-        if images:
-            images_section = f"""
-
-Available images from the page:
-{self._format_images_for_prompt(images[:5])}  # Limit to 5 images
-
-Please select the most relevant recipe images and include them in the images field.
-"""
-
         return f"""Extract comprehensive recipe information from this web content.
 
 Rules:
@@ -79,7 +69,7 @@ Rules:
 - For meal_times, use only these values: "breakfast", "lunch", "dinner", "snack", "brunch", "dessert"
 - Include clear step-by-step instructions and split one to many if needed
 - title should be a clasic name of the recipe, not a description, nor adjectives should be used
-- For images, set relevance_score (0.0-1.0) and is_primary (true for main image)
+- Images field should always be empty (image extraction is simplified)
 
 Appliance Settings:
 - IMPORTANT: Generate appropriate appliance settings based on the cooking methods mentioned in the recipe
@@ -89,17 +79,6 @@ Appliance Settings:
 - For each appliance, specify appropriate utensils if mentioned (pans, trays, etc.)
 
 Web Content:
-{content}  # Limit content for token efficiency
-{images_section}"""
+{content}"""
 
-    def _format_images_for_prompt(self, images: List[dict]) -> str:
-        """Format images for inclusion in the prompt."""
-        formatted = []
-        for i, img in enumerate(images):
-            img_info = f"Image {i+1}: {img['url']}"
-            if img.get('alt_text'):
-                img_info += f" (alt: {img['alt_text']})"
-            if img.get('title'):
-                img_info += f" (title: {img['title']})"
-            formatted.append(img_info)
-        return "\n".join(formatted)
+
