@@ -139,7 +139,7 @@ class RecipeCreate(BaseModel):
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
     meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
-    source: Source = Field(default_factory=Source)
+    source: Source = Field(default_factory=lambda: Source())
     images: List[str] = Field(default_factory=list, max_length=10)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
