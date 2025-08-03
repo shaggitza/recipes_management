@@ -1,6 +1,6 @@
 """Simplified langfun models for structured recipe data extraction."""
 
-from typing import List, Optional
+from typing import List, Optional, Literal
 import pyglove as pg
 
 
@@ -8,7 +8,7 @@ class Ingredient(pg.Object):
     """Recipe ingredient with standardized structure."""
 
     name: str
-    amount: str
+    amount: str | None = None
     unit: Optional[str] = None
 
 
@@ -34,5 +34,12 @@ class RecipeExtraction(pg.Object):
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     tags: List[str] = []
+    meal_times: List[
+        Literal["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+    ] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
+
+
+# Alias for compatibility with tests
+ExtractedRecipe = RecipeExtraction
