@@ -1,6 +1,6 @@
 """Simplified langfun models for structured recipe data extraction."""
 
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Union
 import pyglove as pg
 
 
@@ -136,9 +136,17 @@ class RecipeExtraction(pg.Object):
     ]  # Remove default - let AI populate
     images: List[ExtractedImage]  # Remove default - let AI populate
     source_url: Optional[str] = None
-    # For PyGlove, we'll use a list of appliance settings
-    # The AI model will generate appropriate appliance setting objects
-    appliance_settings: List  # Remove default - let AI populate
+    # Properly typed appliance settings list with Union types for langfun
+    appliance_settings: List[Union[
+        GasBurnerSettings,
+        AirfryerSettings,
+        ElectricGrillSettings,
+        ElectricStoveSettings,
+        InductionStoveSettings,
+        OvenSettings,
+        CharcoalGrillSettings,
+        GeneralStoveSettings
+    ]]  # Remove default - let AI populate with proper type information
 
 
 # Helper function to create appliance settings choice for PyGlove
