@@ -120,14 +120,7 @@ async def home(request: Request):
     logger.debug("Serving home page")
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.get("/recipe/{recipe_id}", response_class=HTMLResponse)
-async def recipe_detail_page(request: Request, recipe_id: str):
-    """Serve the recipe detail page"""
-    logger.debug(f"Serving recipe detail page for recipe ID: {recipe_id}")
-    return templates.TemplateResponse("recipe_detail.html", {
-        "request": request,
-        "recipe_id": recipe_id
-    })
+
 
 @app.get("/health")
 async def health_check():

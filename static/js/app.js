@@ -103,9 +103,64 @@ class RecipeManager {
     }
     
     initUrlHandling() {
-        // URL handling is now simplified since we use separate pages for recipe details
-        // No need for complex modal URL handling
-        console.log('URL handling initialized for main page');
+        // Handle hash-based navigation for recipe details
+        this.handleHashChange();
+        window.addEventListener('hashchange', () => this.handleHashChange());
+        
+        // Handle browser back/forward
+        window.addEventListener('popstate', () => this.handleHashChange());
+    }
+    
+    handleHashChange() {
+        const hash = window.location.hash;
+        
+        if (hash.startsWith('#recipe/')) {
+            const recipeId = hash.substring(8); // Remove '#recipe/'
+            this.loadAndShowRecipeDetail(recipeId);
+        } else {
+            // Close any open recipe detail modal
+            this.closeDetailModal(false);
+        }
+    }
+    
+    async loadAndShowRecipeDetail(recipeId) {
+        try {
+            // Save current filters before showing recipe
+            this.savedFilters = this.saveCurrentFilters();
+            
+            const response = await fetch(`/api/recipes/${recipeId}`);
+            if (!response.ok) {
+                throw new Error(`Recipe not found: ${response.status}`);
+            }
+            
+            const recipe = await response.json();
+            this.showRecipeDetail(recipe);
+        } catch (error) {
+            console.error('Error loading recipe:', error);
+            this.showError('Failed to load recipe details');
+            // Remove invalid hash
+            window.location.hash = '';
+        }
+    }
+    
+    showRecipeDetail(recipe) {
+        this.currentRecipe = recipe;
+        
+        const modal = document.getElementById('recipeDetailModal');
+        const title = document.getElementById('detailTitle');
+        const content = document.getElementById('recipeDetailContent');
+        
+        if (!modal || !title || !content) {
+            console.error('Recipe detail modal elements not found');
+            return;
+        }
+        
+        title.textContent = recipe.title;
+        content.innerHTML = this.renderRecipeDetail(recipe);
+        modal.style.display = 'block';
+        
+        // Update page title
+        document.title = `${recipe.title} - Recipe Management`;
     }
     
 
@@ -420,8 +475,9 @@ class RecipeManager {
     }
 
     navigateToRecipeDetail(recipe) {
-        // Navigate to the recipe detail page
-        window.location.href = `/recipe/${recipe.id}`;
+        // Use hash-based navigation to show recipe detail
+        window.location.hash = `#recipe/${recipe.id}`;
+        this.showRecipeDetail(recipe);
     }
 
     renderRecipeDetail(recipe) {
@@ -1303,9 +1359,11 @@ class RecipeManager {
         this.currentRecipe = null;
         
         // Update URL to remove recipe hash
-        if (updateUrl) {
-            const newUrl = `${window.location.pathname}${window.location.search}`;
-            history.pushState(null, 'Recipe Management', newUrl);
+        if (updateUrl && window.location.hash.startsWith('#recipe/')) {
+            history.pushState(null, 'Recipe Management', window.location.pathname + window.location.search);
+            
+            // Restore page title
+            document.title = 'Recipe Management';
             
             // Restore saved filters if they exist
             if (this.savedFilters) {
