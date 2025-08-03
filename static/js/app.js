@@ -597,8 +597,8 @@ class RecipeManager {
         if (setting.heat_level) {
             settingDetails += `<span><strong>Heat Level:</strong> ${this.escapeHtml(setting.heat_level)}</span>`;
         }
-        if (setting.temperature_fahrenheit) {
-            settingDetails += `<span><strong>Temperature:</strong> ${setting.temperature_fahrenheit}°F</span>`;
+        if (setting.temperature_celsius) {
+            settingDetails += `<span><strong>Temperature:</strong> ${setting.temperature_celsius}°C</span>`;
         }
         if (setting.power_level) {
             settingDetails += `<span><strong>Power Level:</strong> ${setting.power_level}/10</span>`;
@@ -822,7 +822,7 @@ class RecipeManager {
                 if (!value || name.startsWith('utensil_')) return; // Skip empty and utensil fields (handled separately)
                 
                 // Convert specific field types
-                if (['temperature_fahrenheit', 'duration_minutes', 'power_level', 'shake_interval_minutes'].includes(name)) {
+                if (['temperature_celsius', 'duration_minutes', 'power_level', 'shake_interval_minutes'].includes(name)) {
                     value = parseInt(value);
                     if (isNaN(value)) return;
                 } else if (['preheat_required', 'convection'].includes(name)) {
@@ -866,7 +866,7 @@ class RecipeManager {
         // Check required fields based on appliance type
         if (type === 'gas_burner' && !setting.flame_level) return false;
         if (['electric_stove', 'stove'].includes(type) && !setting.heat_level) return false;
-        if (['airfryer', 'electric_grill', 'oven'].includes(type) && !setting.temperature_fahrenheit) return false;
+        if (['airfryer', 'electric_grill', 'oven'].includes(type) && !setting.temperature_celsius) return false;
         if (type === 'induction_stove' && !setting.power_level) return false;
         if (['airfryer', 'oven'].includes(type) && !setting.duration_minutes) return false;
         if (type === 'charcoal_grill' && !setting.heat_zone) return false;
@@ -1111,11 +1111,21 @@ class RecipeManager {
         }
 
         if (['airfryer', 'electric_grill', 'oven'].includes(applianceType)) {
+            let tempMin, tempMax, tempPlaceholder;
+            
+            if (applianceType === 'airfryer') {
+                tempMin = 40; tempMax = 230; tempPlaceholder = "190";
+            } else if (applianceType === 'electric_grill') {
+                tempMin = 95; tempMax = 260; tempPlaceholder = "200"; 
+            } else if (applianceType === 'oven') {
+                tempMin = 80; tempMax = 285; tempPlaceholder = "180";
+            }
+            
             fieldsHtml += `
                 <div class="appliance-field">
-                    <label>Temperature (°F) *</label>
-                    <input type="number" name="temperature_fahrenheit" value="${setting.temperature_fahrenheit || ''}" 
-                           min="100" max="550" placeholder="350" required>
+                    <label>Temperature (°C) *</label>
+                    <input type="number" name="temperature_celsius" value="${setting.temperature_celsius || ''}" 
+                           min="${tempMin}" max="${tempMax}" placeholder="${tempPlaceholder}" required>
                 </div>
             `;
         }
@@ -1128,9 +1138,9 @@ class RecipeManager {
                            min="1" max="10" placeholder="5" required>
                 </div>
                 <div class="appliance-field">
-                    <label>Temperature (°F)</label>
-                    <input type="number" name="temperature_fahrenheit" value="${setting.temperature_fahrenheit || ''}" 
-                           min="100" max="500" placeholder="350">
+                    <label>Temperature (°C)</label>
+                    <input type="number" name="temperature_celsius" value="${setting.temperature_celsius || ''}" 
+                           min="40" max="260" placeholder="175">
                 </div>
             `;
         }
