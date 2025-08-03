@@ -218,7 +218,6 @@ class RecipeManager {
         // Dynamic form elements
         safeAddEventListener('addIngredient', 'click', () => this.addIngredientRow());
         safeAddEventListener('addInstruction', 'click', () => this.addInstructionRow());
-        safeAddEventListener('addApplianceSetting', 'click', () => this.addApplianceSettingRow());
 
         // Recipe detail actions
         safeAddEventListener('editRecipeBtn', 'click', () => this.editCurrentRecipe());
@@ -543,15 +542,6 @@ class RecipeManager {
                 </div>
             ` : ''}
 
-            ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-fire"></i> Appliance Settings</h3>
-                    <div class="appliance-settings-display">
-                        ${recipe.appliance_settings.map(setting => this.renderApplianceSettingDetail(setting)).join('')}
-                    </div>
-                </div>
-            ` : ''}
-
             ${recipe.tags && recipe.tags.length > 0 ? `
                 <div class="detail-section">
                     <h3><i class="fas fa-tags"></i> Tags</h3>
@@ -579,79 +569,6 @@ class RecipeManager {
                     </p>
                 </div>
             ` : ''}
-        `;
-    }
-
-    renderApplianceSettingDetail(setting) {
-        const applianceNames = {
-            'gas_burner': 'Gas Burner',
-            'electric_stove': 'Electric Stove',
-            'induction_stove': 'Induction Stove', 
-            'airfryer': 'Air Fryer',
-            'electric_grill': 'Electric Grill',
-            'oven': 'Oven',
-            'charcoal_grill': 'Charcoal Grill',
-            'electric_basic': 'Electric Basic'
-        };
-        
-        const applianceName = applianceNames[setting.appliance_type] || setting.appliance_type;
-        const settings = setting.settings || {};
-        
-        let settingsHtml = '';
-        
-        switch (setting.appliance_type) {
-            case 'gas_burner':
-                settingsHtml += settings.flame_level ? `<div class="setting-item"><strong>Flame Level:</strong> ${this.capitalize(settings.flame_level)}</div>` : '';
-                settingsHtml += settings.burner_size ? `<div class="setting-item"><strong>Burner Size:</strong> ${this.capitalize(settings.burner_size)}</div>` : '';
-                break;
-            case 'electric_stove':
-                settingsHtml += settings.heat_level ? `<div class="setting-item"><strong>Heat Level:</strong> ${settings.heat_level}/10</div>` : '';
-                break;
-            case 'induction_stove':
-                settingsHtml += settings.temperature ? `<div class="setting-item"><strong>Temperature:</strong> ${settings.temperature}°F</div>` : '';
-                settingsHtml += settings.power_level ? `<div class="setting-item"><strong>Power Level:</strong> ${settings.power_level}/10</div>` : '';
-                break;
-            case 'airfryer':
-                settingsHtml += settings.temperature ? `<div class="setting-item"><strong>Temperature:</strong> ${settings.temperature}°F</div>` : '';
-                settingsHtml += settings.time_minutes ? `<div class="setting-item"><strong>Time:</strong> ${settings.time_minutes} min</div>` : '';
-                settingsHtml += settings.preheat !== undefined ? `<div class="setting-item"><strong>Preheat:</strong> ${settings.preheat ? 'Yes' : 'No'}</div>` : '';
-                settingsHtml += settings.shake_interval ? `<div class="setting-item"><strong>Shake Every:</strong> ${settings.shake_interval} min</div>` : '';
-                break;
-            case 'electric_grill':
-                settingsHtml += settings.temperature ? `<div class="setting-item"><strong>Temperature:</strong> ${settings.temperature}°F</div>` : '';
-                settingsHtml += settings.preheat_time ? `<div class="setting-item"><strong>Preheat Time:</strong> ${settings.preheat_time} min</div>` : '';
-                break;
-            case 'oven':
-                settingsHtml += settings.temperature ? `<div class="setting-item"><strong>Temperature:</strong> ${settings.temperature}°F</div>` : '';
-                settingsHtml += settings.cooking_mode ? `<div class="setting-item"><strong>Mode:</strong> ${this.capitalize(settings.cooking_mode)}</div>` : '';
-                settingsHtml += settings.rack_position ? `<div class="setting-item"><strong>Rack:</strong> ${this.capitalize(settings.rack_position)}</div>` : '';
-                settingsHtml += settings.preheat !== undefined ? `<div class="setting-item"><strong>Preheat:</strong> ${settings.preheat ? 'Yes' : 'No'}</div>` : '';
-                break;
-            case 'charcoal_grill':
-                settingsHtml += settings.charcoal_amount ? `<div class="setting-item"><strong>Charcoal:</strong> ${this.capitalize(settings.charcoal_amount)}</div>` : '';
-                settingsHtml += settings.heat_zone ? `<div class="setting-item"><strong>Heat Zone:</strong> ${this.capitalize(settings.heat_zone)}</div>` : '';
-                settingsHtml += settings.cooking_time ? `<div class="setting-item"><strong>Cooking Time:</strong> ${settings.cooking_time} min</div>` : '';
-                break;
-            case 'electric_basic':
-                settingsHtml += settings.power_setting ? `<div class="setting-item"><strong>Power:</strong> ${this.capitalize(settings.power_setting)}</div>` : '';
-                break;
-        }
-        
-        if (settings.utensils && settings.utensils.length > 0) {
-            settingsHtml += `<div class="setting-item"><strong>Utensils:</strong> ${settings.utensils.join(', ')}</div>`;
-        }
-        
-        if (settings.notes) {
-            settingsHtml += `<div class="setting-item"><strong>Notes:</strong> ${this.escapeHtml(settings.notes)}</div>`;
-        }
-        
-        return `
-            <div class="appliance-setting">
-                <h4 class="appliance-name"><i class="fas fa-fire"></i> ${applianceName}</h4>
-                <div class="appliance-details">
-                    ${settingsHtml}
-                </div>
-            </div>
         `;
     }
 
@@ -762,9 +679,6 @@ class RecipeManager {
         // Instructions
         recipe.instructions = this.getInstructionsFromForm();
         
-        // Appliance settings
-        recipe.appliance_settings = this.getApplianceSettingsFromForm();
-        
         // Images
         recipe.images = this.uploadedImages || [];
         
@@ -806,110 +720,6 @@ class RecipeManager {
         return instructions;
     }
 
-    getApplianceSettingsFromForm() {
-        const applianceSettings = [];
-        const rows = document.querySelectorAll('#applianceSettingsContainer .appliance-setting-row');
-        
-        rows.forEach(row => {
-            const applianceType = row.querySelector('.appliance-type-select').value;
-            if (!applianceType) return;
-            
-            const detailsDiv = row.querySelector('.appliance-settings-details');
-            const settings = this.collectApplianceSettings(applianceType, detailsDiv);
-            
-            applianceSettings.push({
-                appliance_type: applianceType,
-                settings: settings
-            });
-        });
-        
-        return applianceSettings;
-    }
-
-    collectApplianceSettings(applianceType, detailsDiv) {
-        const settings = {};
-        
-        // Collect utensils and notes (common to all)
-        const utensilsInput = detailsDiv.querySelector('.setting-utensils');
-        if (utensilsInput && utensilsInput.value.trim()) {
-            settings.utensils = utensilsInput.value.split(',').map(u => u.trim()).filter(u => u);
-        } else {
-            settings.utensils = [];
-        }
-        
-        const notesInput = detailsDiv.querySelector('.setting-notes');
-        if (notesInput && notesInput.value.trim()) {
-            settings.notes = notesInput.value.trim();
-        }
-        
-        // Collect appliance-specific settings
-        switch (applianceType) {
-            case 'gas_burner':
-                const flameLevel = detailsDiv.querySelector('.setting-flame-level');
-                const burnerSize = detailsDiv.querySelector('.setting-burner-size');
-                if (flameLevel) settings.flame_level = flameLevel.value;
-                if (burnerSize && burnerSize.value) settings.burner_size = burnerSize.value;
-                break;
-                
-            case 'electric_stove':
-                const heatLevel = detailsDiv.querySelector('.setting-heat-level');
-                if (heatLevel) settings.heat_level = parseInt(heatLevel.value);
-                break;
-                
-            case 'induction_stove':
-                const temp = detailsDiv.querySelector('.setting-temperature');
-                const powerLevel = detailsDiv.querySelector('.setting-power-level');
-                if (temp && temp.value) settings.temperature = parseInt(temp.value);
-                if (powerLevel && powerLevel.value) settings.power_level = parseInt(powerLevel.value);
-                break;
-                
-            case 'airfryer':
-                const airTemp = detailsDiv.querySelector('.setting-temperature');
-                const timeMinutes = detailsDiv.querySelector('.setting-time-minutes');
-                const preheat = detailsDiv.querySelector('.setting-preheat');
-                const shakeInterval = detailsDiv.querySelector('.setting-shake-interval');
-                if (airTemp) settings.temperature = parseInt(airTemp.value);
-                if (timeMinutes && timeMinutes.value) settings.time_minutes = parseInt(timeMinutes.value);
-                if (preheat) settings.preheat = preheat.checked;
-                if (shakeInterval && shakeInterval.value) settings.shake_interval = parseInt(shakeInterval.value);
-                break;
-                
-            case 'electric_grill':
-                const grillTemp = detailsDiv.querySelector('.setting-temperature');
-                const preheatTime = detailsDiv.querySelector('.setting-preheat-time');
-                if (grillTemp) settings.temperature = parseInt(grillTemp.value);
-                if (preheatTime && preheatTime.value) settings.preheat_time = parseInt(preheatTime.value);
-                break;
-                
-            case 'oven':
-                const ovenTemp = detailsDiv.querySelector('.setting-temperature');
-                const cookingMode = detailsDiv.querySelector('.setting-cooking-mode');
-                const rackPosition = detailsDiv.querySelector('.setting-rack-position');
-                const ovenPreheat = detailsDiv.querySelector('.setting-preheat');
-                if (ovenTemp) settings.temperature = parseInt(ovenTemp.value);
-                if (cookingMode) settings.cooking_mode = cookingMode.value;
-                if (rackPosition) settings.rack_position = rackPosition.value;
-                if (ovenPreheat) settings.preheat = ovenPreheat.checked;
-                break;
-                
-            case 'charcoal_grill':
-                const charcoalAmount = detailsDiv.querySelector('.setting-charcoal-amount');
-                const heatZone = detailsDiv.querySelector('.setting-heat-zone');
-                const cookingTime = detailsDiv.querySelector('.setting-cooking-time');
-                if (charcoalAmount) settings.charcoal_amount = charcoalAmount.value;
-                if (heatZone) settings.heat_zone = heatZone.value;
-                if (cookingTime && cookingTime.value) settings.cooking_time = parseInt(cookingTime.value);
-                break;
-                
-            case 'electric_basic':
-                const powerSetting = detailsDiv.querySelector('.setting-power-setting');
-                if (powerSetting) settings.power_setting = powerSetting.value;
-                break;
-        }
-        
-        return settings;
-    }
-
     populateForm(recipe) {
         // Basic fields
         document.getElementById('title').value = recipe.title || '';
@@ -936,9 +746,6 @@ class RecipeManager {
         
         // Instructions
         this.populateInstructions(recipe.instructions || []);
-        
-        // Appliance settings
-        this.populateApplianceSettings(recipe.appliance_settings || []);
         
         // Images
         this.populateImages(recipe.images || []);
@@ -968,20 +775,6 @@ class RecipeManager {
                 this.addInstructionRow(inst);
             });
         }
-    }
-
-    populateApplianceSettings(applianceSettings) {
-        const container = document.getElementById('applianceSettingsContainer');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        if (applianceSettings.length > 0) {
-            applianceSettings.forEach(setting => {
-                this.addApplianceSettingRow(setting);
-            });
-        }
-        // Don't add a default row - let user add as needed
     }
 
     populateImages(images) {
@@ -1075,227 +868,6 @@ class RecipeManager {
         container.appendChild(row);
     }
 
-    addApplianceSettingRow(applianceSetting = null) {
-        const container = document.getElementById('applianceSettingsContainer');
-        const row = document.createElement('div');
-        row.className = 'appliance-setting-row';
-        
-        const applianceType = applianceSetting?.appliance_type || '';
-        const settings = applianceSetting?.settings || {};
-        
-        row.innerHTML = `
-            <div class="appliance-setting-header">
-                <select class="appliance-type-select">
-                    <option value="">Select Appliance</option>
-                    <option value="gas_burner" ${applianceType === 'gas_burner' ? 'selected' : ''}>Gas Burner</option>
-                    <option value="electric_stove" ${applianceType === 'electric_stove' ? 'selected' : ''}>Electric Stove</option>
-                    <option value="induction_stove" ${applianceType === 'induction_stove' ? 'selected' : ''}>Induction Stove</option>
-                    <option value="airfryer" ${applianceType === 'airfryer' ? 'selected' : ''}>Air Fryer</option>
-                    <option value="electric_grill" ${applianceType === 'electric_grill' ? 'selected' : ''}>Electric Grill</option>
-                    <option value="oven" ${applianceType === 'oven' ? 'selected' : ''}>Oven</option>
-                    <option value="charcoal_grill" ${applianceType === 'charcoal_grill' ? 'selected' : ''}>Charcoal Grill</option>
-                    <option value="electric_basic" ${applianceType === 'electric_basic' ? 'selected' : ''}>Electric Basic</option>
-                </select>
-                <button type="button" class="btn btn-danger remove-appliance-setting">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="appliance-settings-details" style="display: ${applianceType ? 'block' : 'none'};">
-                <!-- Settings will be populated based on appliance type -->
-            </div>
-        `;
-        
-        const typeSelect = row.querySelector('.appliance-type-select');
-        const detailsDiv = row.querySelector('.appliance-settings-details');
-        
-        typeSelect.addEventListener('change', () => {
-            this.updateApplianceSettingsDetails(typeSelect.value, detailsDiv, settings);
-        });
-        
-        row.querySelector('.remove-appliance-setting').addEventListener('click', () => {
-            row.remove();
-        });
-        
-        container.appendChild(row);
-        
-        // Initialize with current settings if provided
-        if (applianceType) {
-            this.updateApplianceSettingsDetails(applianceType, detailsDiv, settings);
-        }
-    }
-
-    updateApplianceSettingsDetails(applianceType, detailsDiv, existingSettings = {}) {
-        if (!applianceType) {
-            detailsDiv.style.display = 'none';
-            return;
-        }
-        
-        detailsDiv.style.display = 'block';
-        let html = '';
-        
-        // Common utensils field for all appliances
-        const utensils = existingSettings.utensils || [];
-        const utensilsValue = Array.isArray(utensils) ? utensils.join(', ') : utensils;
-        
-        switch (applianceType) {
-            case 'gas_burner':
-                html = `
-                    <div class="settings-row">
-                        <label>Flame Level:</label>
-                        <select class="setting-flame-level">
-                            <option value="low" ${existingSettings.flame_level === 'low' ? 'selected' : ''}>Low</option>
-                            <option value="medium" ${existingSettings.flame_level === 'medium' ? 'selected' : ''}>Medium</option>
-                            <option value="high" ${existingSettings.flame_level === 'high' ? 'selected' : ''}>High</option>
-                            <option value="simmer" ${existingSettings.flame_level === 'simmer' ? 'selected' : ''}>Simmer</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label>Burner Size:</label>
-                        <select class="setting-burner-size">
-                            <option value="">Any Size</option>
-                            <option value="small" ${existingSettings.burner_size === 'small' ? 'selected' : ''}>Small</option>
-                            <option value="medium" ${existingSettings.burner_size === 'medium' ? 'selected' : ''}>Medium</option>
-                            <option value="large" ${existingSettings.burner_size === 'large' ? 'selected' : ''}>Large</option>
-                        </select>
-                    </div>
-                `;
-                break;
-            case 'electric_stove':
-                html = `
-                    <div class="settings-row">
-                        <label>Heat Level (1-10):</label>
-                        <input type="number" class="setting-heat-level" min="1" max="10" value="${existingSettings.heat_level || 5}">
-                    </div>
-                `;
-                break;
-            case 'induction_stove':
-                html = `
-                    <div class="settings-row">
-                        <label>Temperature (°F):</label>
-                        <input type="number" class="setting-temperature" min="100" max="500" value="${existingSettings.temperature || ''}">
-                    </div>
-                    <div class="settings-row">
-                        <label>Power Level (1-10):</label>
-                        <input type="number" class="setting-power-level" min="1" max="10" value="${existingSettings.power_level || ''}">
-                    </div>
-                `;
-                break;
-            case 'airfryer':
-                html = `
-                    <div class="settings-row">
-                        <label>Temperature (°F):</label>
-                        <input type="number" class="setting-temperature" min="100" max="500" value="${existingSettings.temperature || 350}">
-                    </div>
-                    <div class="settings-row">
-                        <label>Time (minutes):</label>
-                        <input type="number" class="setting-time-minutes" min="1" max="120" value="${existingSettings.time_minutes || ''}">
-                    </div>
-                    <div class="settings-row">
-                        <label>
-                            <input type="checkbox" class="setting-preheat" ${existingSettings.preheat !== false ? 'checked' : ''}> Preheat
-                        </label>
-                    </div>
-                    <div class="settings-row">
-                        <label>Shake Interval (minutes):</label>
-                        <input type="number" class="setting-shake-interval" min="1" max="30" value="${existingSettings.shake_interval || ''}">
-                    </div>
-                `;
-                break;
-            case 'electric_grill':
-                html = `
-                    <div class="settings-row">
-                        <label>Temperature (°F):</label>
-                        <input type="number" class="setting-temperature" min="200" max="600" value="${existingSettings.temperature || 400}">
-                    </div>
-                    <div class="settings-row">
-                        <label>Preheat Time (minutes):</label>
-                        <input type="number" class="setting-preheat-time" min="1" max="30" value="${existingSettings.preheat_time || ''}">
-                    </div>
-                `;
-                break;
-            case 'oven':
-                html = `
-                    <div class="settings-row">
-                        <label>Temperature (°F):</label>
-                        <input type="number" class="setting-temperature" min="200" max="550" value="${existingSettings.temperature || 350}">
-                    </div>
-                    <div class="settings-row">
-                        <label>Cooking Mode:</label>
-                        <select class="setting-cooking-mode">
-                            <option value="bake" ${existingSettings.cooking_mode === 'bake' ? 'selected' : ''}>Bake</option>
-                            <option value="broil" ${existingSettings.cooking_mode === 'broil' ? 'selected' : ''}>Broil</option>
-                            <option value="convection" ${existingSettings.cooking_mode === 'convection' ? 'selected' : ''}>Convection</option>
-                            <option value="roast" ${existingSettings.cooking_mode === 'roast' ? 'selected' : ''}>Roast</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label>Rack Position:</label>
-                        <select class="setting-rack-position">
-                            <option value="top" ${existingSettings.rack_position === 'top' ? 'selected' : ''}>Top</option>
-                            <option value="middle" ${existingSettings.rack_position === 'middle' ? 'selected' : ''}>Middle</option>
-                            <option value="bottom" ${existingSettings.rack_position === 'bottom' ? 'selected' : ''}>Bottom</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label>
-                            <input type="checkbox" class="setting-preheat" ${existingSettings.preheat !== false ? 'checked' : ''}> Preheat
-                        </label>
-                    </div>
-                `;
-                break;
-            case 'charcoal_grill':
-                html = `
-                    <div class="settings-row">
-                        <label>Charcoal Amount:</label>
-                        <select class="setting-charcoal-amount">
-                            <option value="light" ${existingSettings.charcoal_amount === 'light' ? 'selected' : ''}>Light</option>
-                            <option value="medium" ${existingSettings.charcoal_amount === 'medium' ? 'selected' : ''}>Medium</option>
-                            <option value="heavy" ${existingSettings.charcoal_amount === 'heavy' ? 'selected' : ''}>Heavy</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label>Heat Zone:</label>
-                        <select class="setting-heat-zone">
-                            <option value="direct" ${existingSettings.heat_zone === 'direct' ? 'selected' : ''}>Direct</option>
-                            <option value="indirect" ${existingSettings.heat_zone === 'indirect' ? 'selected' : ''}>Indirect</option>
-                            <option value="mixed" ${existingSettings.heat_zone === 'mixed' ? 'selected' : ''}>Mixed</option>
-                        </select>
-                    </div>
-                    <div class="settings-row">
-                        <label>Cooking Time (minutes):</label>
-                        <input type="number" class="setting-cooking-time" min="1" max="480" value="${existingSettings.cooking_time || ''}">
-                    </div>
-                `;
-                break;
-            case 'electric_basic':
-                html = `
-                    <div class="settings-row">
-                        <label>Power Setting:</label>
-                        <select class="setting-power-setting">
-                            <option value="low" ${existingSettings.power_setting === 'low' ? 'selected' : ''}>Low</option>
-                            <option value="medium" ${existingSettings.power_setting === 'medium' ? 'selected' : ''}>Medium</option>
-                            <option value="high" ${existingSettings.power_setting === 'high' ? 'selected' : ''}>High</option>
-                        </select>
-                    </div>
-                `;
-                break;
-        }
-        
-        // Add common fields
-        html += `
-            <div class="settings-row">
-                <label>Required Utensils (comma-separated):</label>
-                <input type="text" class="setting-utensils" placeholder="e.g., pan, spatula" value="${utensilsValue}">
-            </div>
-            <div class="settings-row">
-                <label>Notes:</label>
-                <textarea class="setting-notes" rows="2" placeholder="Additional cooking notes">${existingSettings.notes || ''}</textarea>
-            </div>
-        `;
-        
-        detailsDiv.innerHTML = html;
-    }
-
     updateInstructionPlaceholders() {
         const rows = document.querySelectorAll('#instructionsContainer .instruction-row');
         rows.forEach((row, index) => {
@@ -1312,16 +884,12 @@ class RecipeManager {
         // Reset dynamic sections
         const ingredientsContainer = document.getElementById('ingredientsContainer');
         const instructionsContainer = document.getElementById('instructionsContainer');
-        const applianceSettingsContainer = document.getElementById('applianceSettingsContainer');
         
         if (ingredientsContainer) {
             ingredientsContainer.innerHTML = '';
         }
         if (instructionsContainer) {
             instructionsContainer.innerHTML = '';
-        }
-        if (applianceSettingsContainer) {
-            applianceSettingsContainer.innerHTML = '';
         }
         
         // Clear image previews
@@ -1336,7 +904,6 @@ class RecipeManager {
         
         this.addIngredientRow();
         this.addInstructionRow();
-        // Don't add a default appliance setting row - let user add as needed
     }
 
     closeModal() {
