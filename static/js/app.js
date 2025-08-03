@@ -103,49 +103,12 @@ class RecipeManager {
     }
     
     initUrlHandling() {
-        // Handle browser back/forward buttons
-        window.addEventListener('popstate', (event) => {
-            if (event.state && event.state.recipeId) {
-                // Going back to a recipe
-                const recipe = this.recipes.find(r => r.id === event.state.recipeId);
-                if (recipe) {
-                    this.showRecipeDetail(recipe, false); // false = don't update URL again
-                }
-            } else {
-                // Going back to main list
-                this.closeDetailModal(false); // false = don't update URL again
-                // Restore saved filters if they exist
-                if (this.savedFilters) {
-                    this.restoreFilters(this.savedFilters);
-                    this.savedFilters = null;
-                }
-            }
-        });
-        
-        // Check for recipe ID in URL on page load
-        this.checkUrlForRecipe();
+        // URL handling is now simplified since we use separate pages for recipe details
+        // No need for complex modal URL handling
+        console.log('URL handling initialized for main page');
     }
     
-    checkUrlForRecipe() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const hash = window.location.hash;
-        
-        // Check for recipe ID in hash (e.g., #recipe-123)
-        if (hash.startsWith('#recipe-')) {
-            const recipeId = hash.substring(8); // Remove '#recipe-' prefix
-            // Wait for recipes to load, then show the recipe
-            const checkAndShow = () => {
-                const recipe = this.recipes.find(r => r.id === recipeId);
-                if (recipe) {
-                    this.showRecipeDetail(recipe, false);
-                } else if (this.recipes.length === 0) {
-                    // Recipes not loaded yet, wait a bit and try again
-                    setTimeout(checkAndShow, 100);
-                }
-            };
-            checkAndShow();
-        }
-    }
+
     
     saveCurrentFilters() {
         const searchInput = document.getElementById('searchInput');
@@ -360,7 +323,7 @@ class RecipeManager {
         
         // Bind click events to recipe cards
         container.querySelectorAll('.recipe-card').forEach((card, index) => {
-            card.addEventListener('click', () => this.showRecipeDetail(this.recipes[index]));
+            card.addEventListener('click', () => this.navigateToRecipeDetail(this.recipes[index]));
         });
     }
 
@@ -456,35 +419,9 @@ class RecipeManager {
 
     }
 
-    showRecipeDetail(recipe, updateUrl = true) {
-        this.currentRecipe = recipe;
-        const modal = document.getElementById('recipeDetailModal');
-        const title = document.getElementById('detailTitle');
-        const content = document.getElementById('recipeDetailContent');
-        
-        if (!modal || !title || !content) {
-            console.warn('Recipe detail modal elements not found. Cannot show recipe detail.');
-            return;
-        }
-        
-        // Save current filters before showing recipe
-        if (updateUrl) {
-            this.savedFilters = this.saveCurrentFilters();
-        }
-        
-        title.textContent = recipe.title;
-        content.innerHTML = this.renderRecipeDetail(recipe);
-        modal.style.display = 'block';
-        
-        // Update URL to include recipe ID
-        if (updateUrl && recipe.id) {
-            const newUrl = `${window.location.pathname}${window.location.search}#recipe-${recipe.id}`;
-            history.pushState(
-                { recipeId: recipe.id }, 
-                `${recipe.title} - Recipe Management`, 
-                newUrl
-            );
-        }
+    navigateToRecipeDetail(recipe) {
+        // Navigate to the recipe detail page
+        window.location.href = `/recipe/${recipe.id}`;
     }
 
     renderRecipeDetail(recipe) {

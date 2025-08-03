@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Recipe Manager">
+    <title id="pageTitle">Recipe Details - Recipe Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="recipe-detail-page">
+        <!-- Navigation Header -->
+        <header class="recipe-header">
+            <nav class="recipe-nav">
+                <a href="/" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Recipes</span>
+                </a>
+                <div class="recipe-actions">
+                    <button id="editRecipeBtn" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> 
+                        <span class="btn-text">Edit</span>
+                    </button>
+                    <button id="deleteRecipeBtn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> 
+                        <span class="btn-text">Delete</span>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="recipe-main">
+            <div class="recipe-container">
+                <!-- Loading State -->
+                <div id="loadingSpinner" class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> 
+                    <span>Loading recipe...</span>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load recipe. Please try again.</p>
+                    <a href="/" class="btn btn-primary">Go Back to Recipes</a>
+                </div>
+
+                <!-- Recipe Content -->
+                <div id="recipeContent" class="recipe-content" style="display: none;">
+                    <!-- Recipe header with title and image -->
+                    <div class="recipe-hero">
+                        <div class="recipe-images" id="recipeImages">
+                            <!-- Images will be populated by JavaScript -->
+                        </div>
+                        <div class="recipe-title-section">
+                            <h1 id="recipeTitle" class="recipe-title"></h1>
+                            <p id="recipeDescription" class="recipe-description"></p>
+                        </div>
+                    </div>
+
+                    <!-- Recipe meta information -->
+                    <div id="recipeMeta" class="recipe-meta-grid">
+                        <!-- Meta info will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Recipe sections -->
+                    <div class="recipe-sections">
+                        <!-- Ingredients Section -->
+                        <section id="ingredientsSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-list"></i>
+                                Ingredients
+                            </h2>
+                            <div id="ingredientsList" class="ingredients-list">
+                                <!-- Ingredients will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <!-- Instructions Section -->
+                        <section id="instructionsSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                Instructions
+                            </h2>
+                            <div id="instructionsList" class="instructions-list">
+                                <!-- Instructions will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <!-- Appliance Settings Section -->
+                        <section id="applianceSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-tools"></i>
+                                Appliance Settings
+                            </h2>
+                            <div id="applianceSettings" class="appliance-settings-display">
+                                <!-- Appliance settings will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <!-- Tags Section -->
+                        <section id="tagsSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-tags"></i>
+                                Tags
+                            </h2>
+                            <div id="tagsList" class="detail-tags">
+                                <!-- Tags will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <!-- Meal Times Section -->
+                        <section id="mealTimesSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-clock"></i>
+                                Meal Times
+                            </h2>
+                            <div id="mealTimesList" class="detail-tags">
+                                <!-- Meal times will be populated by JavaScript -->
+                            </div>
+                        </section>
+
+                        <!-- Source Section -->
+                        <section id="sourceSection" class="recipe-section" style="display: none;">
+                            <h2 class="section-title">
+                                <i class="fas fa-link"></i>
+                                Source
+                            </h2>
+                            <div id="sourceInfo" class="source-info">
+                                <!-- Source info will be populated by JavaScript -->
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Recipe Edit Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Recipe</h2>
+                <button class="close" id="closeModal">&times;</button>
+            </div>
+            
+            <form id="recipeForm" class="recipe-form">
+                <div class="form-group">
+                    <label for="title">Recipe Title *</label>
+                    <input type="text" id="title" name="title" required 
+                           autocomplete="off" autocapitalize="words" spellcheck="true">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" 
+                              autocapitalize="sentences" spellcheck="true"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prepTime">Prep Time (minutes)</label>
+                        <input type="number" id="prepTime" name="prep_time" min="0" 
+                               inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="form-group">
+                        <label for="cookTime">Cook Time (minutes)</label>
+                        <input type="number" id="cookTime" name="cook_time" min="0" 
+                               inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="form-group">
+                        <label for="servings">Servings</label>
+                        <input type="number" id="servings" name="servings" min="1" 
+                               inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="">Select...</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tags">Tags (comma-separated)</label>
+                    <input type="text" id="tags" name="tags" placeholder="e.g., vegetarian, quick, dinner" 
+                           autocomplete="off" autocapitalize="words" spellcheck="false">
+                </div>
+
+                <div class="form-group">
+                    <label>Meal Times</label>
+                    <div class="meal-times-grid">
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="breakfast">
+                            Breakfast
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="lunch">
+                            Lunch
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="dinner">
+                            Dinner
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="snack">
+                            Snack
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="brunch">
+                            Brunch
+                        </label>
+                        <label class="meal-time-option">
+                            <input type="checkbox" class="meal-time-checkbox" value="dessert">
+                            Dessert
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Source</label>
+                    <div class="form-row">
+                        <select id="sourceType" name="source_type">
+                            <option value="manual">Manual Entry</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="website">Website</option>
+                            <option value="book">Book</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <input type="url" id="sourceUrl" name="source_url" placeholder="Source URL (optional)" 
+                               autocomplete="url" spellcheck="false">
+                        <input type="text" id="sourceName" name="source_name" placeholder="Source name (optional)" 
+                               autocomplete="off" autocapitalize="words" spellcheck="true">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="imageUpload">Recipe Images</label>
+                    <input type="file" id="imageUpload" name="images" accept="image/*" multiple class="file-input">
+                    <div id="imagePreviewContainer" class="image-preview-container">
+                        <!-- Image previews will be shown here -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ingredients</label>
+                    <div id="ingredientsContainer">
+                        <!-- Ingredient rows will be populated by JavaScript -->
+                    </div>
+                    <button type="button" id="addIngredient" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i> Add Ingredient
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>Instructions</label>
+                    <div id="instructionsContainer">
+                        <!-- Instruction rows will be populated by JavaScript -->
+                    </div>
+                    <button type="button" id="addInstruction" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i> Add Step
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <label>Appliance Settings</label>
+                    <div id="applianceSettingsContainer">
+                        <!-- Appliance settings will be added here -->
+                    </div>
+                    <div class="appliance-add-controls">
+                        <select id="applianceTypeSelect" class="appliance-type-select">
+                            <option value="">Select appliance to add...</option>
+                            <option value="gas_burner">Gas Burner</option>
+                            <option value="airfryer">Airfryer</option>
+                            <option value="electric_grill">Electric Grill</option>
+                            <option value="electric_stove">Electric Stove</option>
+                            <option value="induction_stove">Induction Stove</option>
+                            <option value="oven">Oven</option>
+                            <option value="charcoal_grill">Charcoal Grill</option>
+                            <option value="stove">General Stove</option>
+                        </select>
+                        <button type="button" id="addApplianceSetting" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Add Appliance
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Recipe</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image lightbox -->
+    <div id="imageLightbox" class="image-lightbox" style="display: none;">
+        <div class="lightbox-content">
+            <img id="lightboxImage" src="" alt="Recipe image" />
+            <button class="lightbox-close">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        // Pass the recipe ID to JavaScript
+        window.RECIPE_ID = "{{ recipe_id }}";
+    </script>
+    <script src="/static/js/recipe_detail.js"></script>
+</body>
+</html>
