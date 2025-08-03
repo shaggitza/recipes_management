@@ -58,14 +58,17 @@ class RecipeScraper:
             return response.text
             
         except requests.exceptions.Timeout:
-            logger.error(f"Timeout while scraping {url}")
-            return None
+            error_msg = f"Timeout while scraping {url}"
+            logger.error(error_msg)
+            raise TimeoutError(error_msg)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Request error while scraping {url}: {e}")
-            return None
+            error_msg = f"Request error while scraping {url}: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
         except Exception as e:
-            logger.error(f"Unexpected error while scraping {url}: {e}")
-            return None
+            error_msg = f"Unexpected error while scraping {url}: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def extract_images(self, html_content: str, base_url: str) -> List[dict]:
         """
@@ -153,8 +156,9 @@ class RecipeScraper:
             return images[:10]  # Limit to top 10 images
             
         except Exception as e:
-            logger.error(f"Error extracting images: {e}")
-            return []
+            error_msg = f"Error extracting images: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def _is_recipe_context(self, img_tag) -> bool:
         """
@@ -260,8 +264,9 @@ class RecipeScraper:
             return extracted_text.strip()
             
         except Exception as e:
-            logger.error(f"Error extracting recipe content: {e}")
-            return html_content  # Fallback to raw HTML
+            error_msg = f"Error extracting recipe content: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     async def scrape_and_extract(self, url: str) -> Tuple[Optional[str], List[dict]]:
         """

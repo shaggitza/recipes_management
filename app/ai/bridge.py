@@ -187,15 +187,6 @@ class RecipeExtractor:
             )
             
         except Exception as e:
-            logger.error(f"Recipe extraction failed: {e}")
-            return RecipeExtractionResult(
-                success=False,
-                recipe=None,
-                error=str(e),
-                source_url=source_url,
-                extraction_metadata={
-                    "method": "simplified_langfun",
-                    "error_type": type(e).__name__,
-                    "timestamp": datetime.now(timezone.utc).isoformat()
-                }
-            )
+            error_msg = f"Recipe extraction failed: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e

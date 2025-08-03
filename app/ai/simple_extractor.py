@@ -49,15 +49,9 @@ class SimpleRecipeExtractor:
             return recipe
             
         except Exception as e:
-            logger.error(f"Recipe extraction failed: {e}")
-            # Return a basic recipe object with error info
-            return RecipeExtraction(
-                title=f"Failed to extract recipe from {source_url}",
-                description=f"Extraction error: {str(e)}",
-                ingredients=[],
-                instructions=[],
-                tags=["extraction_error"]
-            )
+            error_msg = f"Recipe extraction failed: {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
     def _create_extraction_prompt(self, content: str, images: Optional[List[dict]] = None) -> str:
         """Create a prompt for recipe extraction."""
