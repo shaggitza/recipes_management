@@ -146,18 +146,25 @@ class RecipeManager {
     showRecipeDetail(recipe) {
         this.currentRecipe = recipe;
         
-        const modal = document.getElementById('recipeDetailModal');
+        const mainPage = document.getElementById('mainPage');
+        const detailPage = document.getElementById('recipeDetailPage');
         const title = document.getElementById('detailTitle');
         const content = document.getElementById('recipeDetailContent');
         
-        if (!modal || !title || !content) {
-            console.error('Recipe detail modal elements not found');
+        if (!mainPage || !detailPage || !title || !content) {
+            console.error('Recipe detail page elements not found');
             return;
         }
         
+        // Hide main page and show detail page
+        mainPage.style.display = 'none';
+        detailPage.style.display = 'block';
+        
         title.textContent = recipe.title;
         content.innerHTML = this.renderRecipeDetail(recipe);
-        modal.style.display = 'block';
+        
+        // Scroll to top of the page
+        window.scrollTo(0, 0);
         
         // Update page title
         document.title = `${recipe.title} - Recipe Management`;
@@ -213,7 +220,7 @@ class RecipeManager {
         safeAddEventListener('addRecipeBtn', 'click', () => this.showAddModal());
         safeAddEventListener('importRecipeBtn', 'click', () => this.showImportModal());
         safeAddEventListener('closeModal', 'click', () => this.closeModal());
-        safeAddEventListener('closeDetailModal', 'click', () => this.closeDetailModal());
+        safeAddEventListener('backToListBtn', 'click', () => this.closeDetailModal());
         safeAddEventListener('closeImportModal', 'click', () => this.closeImportModal());
         safeAddEventListener('cancelBtn', 'click', () => this.closeModal());
         safeAddEventListener('cancelImportBtn', 'click', () => this.closeImportModal());
@@ -249,7 +256,6 @@ class RecipeManager {
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 this.closeModal();
-                this.closeDetailModal();
                 this.closeImportModal();
             }
         });
@@ -659,7 +665,15 @@ class RecipeManager {
         this.editingRecipe = this.currentRecipe;
         this.populateForm(this.currentRecipe);
         document.getElementById('modalTitle').textContent = 'Edit Recipe';
-        document.getElementById('recipeDetailModal').style.display = 'none';
+        
+        // Hide detail page and show main page
+        const mainPage = document.getElementById('mainPage');
+        const detailPage = document.getElementById('recipeDetailPage');
+        if (mainPage && detailPage) {
+            detailPage.style.display = 'none';
+            mainPage.style.display = 'block';
+        }
+        
         document.getElementById('recipeModal').style.display = 'block';
     }
 
@@ -1352,10 +1366,15 @@ class RecipeManager {
     }
 
     closeDetailModal(updateUrl = true) {
-        const modal = document.getElementById('recipeDetailModal');
-        if (modal) {
-            modal.style.display = 'none';
+        const mainPage = document.getElementById('mainPage');
+        const detailPage = document.getElementById('recipeDetailPage');
+        
+        if (mainPage && detailPage) {
+            // Hide detail page and show main page
+            detailPage.style.display = 'none';
+            mainPage.style.display = 'block';
         }
+        
         this.currentRecipe = null;
         
         // Update URL to remove recipe hash
