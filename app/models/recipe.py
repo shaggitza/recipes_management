@@ -50,7 +50,7 @@ class GasBurnerSettings(BaseModel):
 class AirfryerSettings(BaseModel):
     """Settings for airfryer cooking"""
     appliance_type: Literal["airfryer"] = "airfryer"
-    temperature_fahrenheit: int = Field(..., ge=100, le=450)
+    temperature_celsius: int = Field(..., ge=40, le=230)
     duration_minutes: int = Field(..., ge=1, le=180)
     preheat_required: bool = Field(default=True)
     shake_interval_minutes: Optional[int] = Field(None, ge=1, le=30)
@@ -61,7 +61,7 @@ class AirfryerSettings(BaseModel):
 class ElectricGrillSettings(BaseModel):
     """Settings for electric grill with temperature control"""
     appliance_type: Literal["electric_grill"] = "electric_grill"
-    temperature_fahrenheit: int = Field(..., ge=200, le=500)
+    temperature_celsius: int = Field(..., ge=95, le=260)
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
     preheat_required: bool = Field(default=True)
     utensils: List[Utensil] = Field(default_factory=list)
@@ -81,7 +81,7 @@ class InductionStoveSettings(BaseModel):
     """Settings for electric induction stove"""
     appliance_type: Literal["induction_stove"] = "induction_stove"
     power_level: int = Field(..., ge=1, le=10)  # induction typically has power levels 1-10
-    temperature_fahrenheit: Optional[int] = Field(None, ge=100, le=500)
+    temperature_celsius: Optional[int] = Field(None, ge=40, le=260)
     duration_minutes: Optional[int] = Field(None, ge=1, le=1440)
     utensils: List[Utensil] = Field(default_factory=list)
     notes: Optional[str] = Field(None, max_length=500)
@@ -90,7 +90,7 @@ class InductionStoveSettings(BaseModel):
 class OvenSettings(BaseModel):
     """Settings for kitchen oven"""
     appliance_type: Literal["oven"] = "oven"
-    temperature_fahrenheit: int = Field(..., ge=170, le=550)
+    temperature_celsius: int = Field(..., ge=80, le=285)
     duration_minutes: int = Field(..., ge=1, le=1440)
     preheat_required: bool = Field(default=True)
     rack_position: Optional[str] = Field(None, max_length=50)  # e.g., "middle", "top", "bottom"

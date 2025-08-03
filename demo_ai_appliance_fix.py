@@ -33,14 +33,14 @@ def main():
     
     # Oven for baking
     oven_setting = OvenSettings(
-        temperature_fahrenheit=392,  # 200°C
+        temperature_celsius=200,  # 200°C
         duration_minutes=35,
         preheat_required=True,
         convection=False,
         rack_position="middle",
         utensils=[Utensil(type="baking tray", material="metal")]
     )
-    print(f"   🏠 Oven: {oven_setting.temperature_fahrenheit}°F for {oven_setting.duration_minutes} min")
+    print(f"   🏠 Oven: {oven_setting.temperature_celsius}°C for {oven_setting.duration_minutes} min")
     
     # Create AI-extracted recipe
     ai_recipe = RecipeExtraction(
@@ -87,7 +87,7 @@ def main():
     print(f"   ✅ Cooking times: prep {api_dict['prep_time']}min, cook {api_dict['cook_time']}min")
     print(f"   ✅ Appliance settings: {len(api_dict['appliance_settings'])} ready for Recipe API")
     print(f"   ✅ Gas burner flame: {api_dict['appliance_settings'][0]['flame_level']}")
-    print(f"   ✅ Oven temperature: {api_dict['appliance_settings'][1]['temperature_fahrenheit']}°F")
+    print(f"   ✅ Oven temperature: {api_dict['appliance_settings'][1]['temperature_celsius']}°C")
     
     print(f"\n🎉 SUCCESS: AI appliance settings now flow correctly to API!")
     print(f"   The issue has been fixed - AI can populate appliance_settings field.")

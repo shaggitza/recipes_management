@@ -217,7 +217,7 @@ class RecipeTransformer:
         try:
             if appliance_type == "oven":
                 return OvenSettings(
-                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 350),
+                    temperature_celsius=setting_dict.get("temperature_celsius", 175),
                     duration_minutes=setting_dict.get("duration_minutes", 30),
                     preheat_required=setting_dict.get("preheat_required", True),
                     rack_position=setting_dict.get("rack_position"),
@@ -234,7 +234,7 @@ class RecipeTransformer:
                 )
             elif appliance_type == "airfryer":
                 return AirfryerSettings(
-                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 375),
+                    temperature_celsius=setting_dict.get("temperature_celsius", 190),
                     duration_minutes=setting_dict.get("duration_minutes", 15),
                     preheat_required=setting_dict.get("preheat_required", True),
                     shake_interval_minutes=setting_dict.get("shake_interval_minutes"),
@@ -243,7 +243,7 @@ class RecipeTransformer:
                 )
             elif appliance_type == "electric_grill":
                 return ElectricGrillSettings(
-                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit", 400),
+                    temperature_celsius=setting_dict.get("temperature_celsius", 200),
                     duration_minutes=setting_dict.get("duration_minutes"),
                     preheat_required=setting_dict.get("preheat_required", True),
                     utensils=utensils,
@@ -252,7 +252,7 @@ class RecipeTransformer:
             elif appliance_type == "induction_stove":
                 return InductionStoveSettings(
                     power_level=setting_dict.get("power_level", 5),
-                    temperature_fahrenheit=setting_dict.get("temperature_fahrenheit"),
+                    temperature_celsius=setting_dict.get("temperature_celsius"),
                     duration_minutes=setting_dict.get("duration_minutes"),
                     utensils=utensils,
                     notes=setting_dict.get("notes")
