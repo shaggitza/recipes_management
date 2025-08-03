@@ -4,7 +4,7 @@ import logging
 from typing import Optional, Literal
 from datetime import datetime, timezone
 
-from app.models.recipe import RecipeCreate, Ingredient, Source
+from app.models.recipe import RecipeCreate, Ingredient, Source, MealTime
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ class RecipeTransformer:
                     "servings": extracted_recipe.servings,
                     "difficulty": extracted_recipe.difficulty,
                     "tags": extracted_recipe.tags,
+                    "meal_times": extracted_recipe.meal_times,
                     "source_url": getattr(extracted_recipe, "source_url", None),
                 }
 
@@ -74,6 +75,7 @@ class RecipeTransformer:
                 servings=recipe_data.get("servings"),
                 difficulty=difficulty,
                 tags=self._clean_tags(recipe_data.get("tags", [])),
+                meal_times=self._clean_meal_times(recipe_data.get("meal_times", [])),
                 source=source,
                 images=[],  # No images extracted yet
                 metadata={
@@ -261,6 +263,36 @@ class RecipeTransformer:
         # Remove duplicates and limit count
         unique_tags = list(dict.fromkeys(cleaned_tags))  # Preserve order
         return unique_tags[:20]  # Limit to 20 tags
+
+    def _clean_meal_times(self, meal_times: list) -> list[MealTime]:
+        """Clean and validate meal_times."""
+        cleaned_meal_times = []
+        
+        for meal_time in meal_times:
+            if meal_time:
+                # Handle both string and MealTime enum inputs
+                if isinstance(meal_time, MealTime):
+                    meal_time_str = meal_time.value
+                else:
+                    meal_time_str = str(meal_time).strip().lower()
+                
+                # Try to convert to MealTime enum
+                try:
+                    enum_value = MealTime(meal_time_str)
+                    cleaned_meal_times.append(enum_value)
+                except ValueError:
+                    # Skip invalid meal times
+                    continue
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_meal_times = []
+        for meal_time in cleaned_meal_times:
+            if meal_time not in seen:
+                seen.add(meal_time)
+                unique_meal_times.append(meal_time)
+        
+        return unique_meal_times[:6]  # Limit to 6 meal times
 
     def _extract_domain_name(self, url: Optional[str]) -> Optional[str]:
         """Extract domain name from URL for source name."""

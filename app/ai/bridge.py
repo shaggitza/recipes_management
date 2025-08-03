@@ -29,11 +29,7 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
         "title": recipe.title,
         "description": recipe.description,
         "ingredients": [
-            {
-                "name": ing.name,
-                "amount": ing.amount,
-                "unit": ing.unit
-            }
+            {"name": ing.name, "amount": ing.amount, "unit": ing.unit}
             for ing in recipe.ingredients
         ],
         "instructions": list(recipe.instructions),
@@ -42,6 +38,7 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
         "servings": recipe.servings,
         "difficulty": recipe.difficulty,
         "tags": list(recipe.tags),
+        "meal_times": list(recipe.meal_times),
         "source_url": source_url,
         "images": [
             {
@@ -49,10 +46,10 @@ def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict
                 "alt_text": img.alt_text,
                 "title": img.title,
                 "relevance_score": img.relevance_score,
-                "is_primary": img.is_primary
+                "is_primary": img.is_primary,
             }
             for img in recipe.images
-        ]
+        ],
     }
 
 

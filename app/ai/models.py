@@ -1,14 +1,28 @@
 """Simplified langfun models for structured recipe data extraction."""
 
-from typing import List, Optional
+from typing import List, Optional, Literal
 import pyglove as pg
+
+# Import MealTime enum from recipe models
+try:
+    from app.models.recipe import MealTime
+except ImportError:
+    # Fallback for tests or when running standalone
+    from enum import Enum
+    class MealTime(str, Enum):
+        BREAKFAST = "breakfast"
+        LUNCH = "lunch" 
+        DINNER = "dinner"
+        SNACK = "snack"
+        BRUNCH = "brunch"
+        DESSERT = "dessert"
 
 
 class Ingredient(pg.Object):
     """Recipe ingredient with standardized structure."""
 
     name: str
-    amount: str
+    amount: str | None = None
     unit: Optional[str] = None
 
 
@@ -51,7 +65,12 @@ class RecipeExtraction(pg.Object):
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     tags: List[str] = []
+    meal_times: List[MealTime] = []
     images: List[ExtractedImage] = []
     source_url: Optional[str] = None
     extraction_method: Optional[str] = None
     cuisine: Optional[str] = None
+
+
+# Alias for compatibility with tests
+ExtractedRecipe = RecipeExtraction
