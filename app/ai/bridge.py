@@ -69,15 +69,16 @@ class RecipeExtractor:
         self, content: str, source_url: str, images: Optional[List[dict]] = None
     ) -> RecipeExtractionResult:
         """
-        Extract recipe with compatibility wrapper.
+        Extract recipe with compatibility wrapper - simplified without image processing.
         
         Maintains the same interface as the old extractor but uses the new simplified backend.
+        Images parameter is ignored in the simplified version.
         """
         try:
             logger.info(f"Extracting recipe from {source_url} using simplified langfun")
             
-            # Use the new simplified extractor
-            recipe_extraction = await self._extractor.extract_recipe(content, source_url, images)
+            # Use the new simplified extractor (ignore images parameter)
+            recipe_extraction = await self._extractor.extract_recipe(content, source_url)
             
             # Convert to expected dictionary format
             recipe_dict = recipe_extraction_to_dict(recipe_extraction, source_url)
@@ -91,7 +92,7 @@ class RecipeExtractor:
                     "method": "simplified_langfun",
                     "content_length": len(content),
                     "model": "gpt-4o",
-                    "images_analyzed": len(images or []),
+                    "images_analyzed": 0,  # Always 0 in simplified version
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             )
