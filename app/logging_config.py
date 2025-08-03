@@ -8,7 +8,7 @@ import logging.config
 import sys
 import json
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import traceback
 
 class StructuredFormatter(logging.Formatter):
@@ -47,7 +47,7 @@ class StructuredFormatter(logging.Formatter):
             log_entry["response_time_ms"] = record.response_time
         
         # Add exception information if present
-        if record.exc_info:
+        if record.exc_info and record.exc_info[0]:
             log_entry["exception"] = {
                 "type": record.exc_info[0].__name__,
                 "message": str(record.exc_info[1]),
@@ -216,7 +216,7 @@ class RequestLogger:
     """
     
     @staticmethod
-    def log_request(logger: logging.Logger, method: str, url: str, request_id: str = None, **kwargs):
+    def log_request(logger: logging.Logger, method: str, url: str, request_id: Optional[str] = None, **kwargs):
         """Log incoming HTTP request."""
         logger.info("Incoming request", extra={
             "method": method,
@@ -227,7 +227,7 @@ class RequestLogger:
     
     @staticmethod
     def log_response(logger: logging.Logger, method: str, url: str, status_code: int, 
-                    response_time: float, request_id: str = None, **kwargs):
+                    response_time: float, request_id: Optional[str] = None, **kwargs):
         """Log HTTP response."""
         level = logging.INFO if status_code < 400 else logging.WARNING if status_code < 500 else logging.ERROR
         
@@ -246,8 +246,8 @@ class DatabaseLogger:
     """
     
     @staticmethod
-    def log_operation(logger: logging.Logger, operation: str, collection: str = None, 
-                     duration: float = None, **kwargs):
+    def log_operation(logger: logging.Logger, operation: str, collection: Optional[str] = None, 
+                     duration: Optional[float] = None, **kwargs):
         """Log database operation."""
         logger.info(f"Database {operation}", extra={
             "extra_data": {
@@ -260,7 +260,7 @@ class DatabaseLogger:
     
     @staticmethod
     def log_error(logger: logging.Logger, operation: str, error: Exception, 
-                 collection: str = None, **kwargs):
+                 collection: Optional[str] = None, **kwargs):
         """Log database error."""
         logger.error(f"Database {operation} failed", exc_info=error, extra={
             "extra_data": {
@@ -317,7 +317,7 @@ class AILogger:
     
     @staticmethod
     def log_ai_call(logger: logging.Logger, model: str, prompt_type: str, 
-                   duration: float = None, token_usage: dict = None, **kwargs):
+                   duration: Optional[float] = None, token_usage: Optional[dict] = None, **kwargs):
         """Log AI model call."""
         logger.info("AI model call", extra={
             "extra_data": {

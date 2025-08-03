@@ -6,6 +6,7 @@ import time
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
 from pydantic import BaseModel, HttpUrl, Field
+from beanie import PydanticObjectId
 
 from app.repositories.recipe_repository import RecipeRepository
 from app.ai.importer import RecipeImporter, ImportResult
@@ -262,7 +263,9 @@ async def get_imported_recipe(
     })
     
     try:
-        recipe = await repository.get_by_id(recipe_id)
+        # Convert string ID to PydanticObjectId
+        object_id = PydanticObjectId(recipe_id)
+        recipe = await repository.get_by_id(object_id)
         if not recipe:
             logger.warning("Recipe not found", extra={
                 "extra_data": {"recipe_id": recipe_id}

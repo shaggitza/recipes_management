@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from beanie import PydanticObjectId
 from fastapi import HTTPException
 
-from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate
+from app.models.recipe import Recipe, RecipeCreate, RecipeUpdate, MealTime
 from app.repositories.recipe_repository import BaseRepository, recipe_repository
 
 
@@ -63,7 +63,7 @@ class RecipeService:
             raise HTTPException(status_code=400, detail="Invalid difficulty level")
         
         # Build filters
-        filters = {}
+        filters: Dict[str, Any] = {}
         if difficulty:
             filters["difficulty"] = difficulty
         
@@ -78,7 +78,7 @@ class RecipeService:
             meal_time_list = [meal_time.strip().lower() for meal_time in meal_times.split(",") if meal_time.strip()]
             if meal_time_list:
                 # Validate meal times
-                valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+                valid_meal_times = [meal_time.value for meal_time in MealTime]
                 validated_meal_times = [mt for mt in meal_time_list if mt in valid_meal_times]
                 if validated_meal_times:
                     filters["meal_times"] = validated_meal_times
@@ -182,7 +182,7 @@ class RecipeService:
         meal_times: Optional[str] = None
     ) -> int:
         """Get count of recipes with optional filters"""
-        filters = {}
+        filters: Dict[str, Any] = {}
         if difficulty:
             if difficulty not in ["easy", "medium", "hard"]:
                 raise HTTPException(status_code=400, detail="Invalid difficulty level")
@@ -196,7 +196,7 @@ class RecipeService:
         if meal_times:
             meal_time_list = [meal_time.strip().lower() for meal_time in meal_times.split(",") if meal_time.strip()]
             if meal_time_list:
-                valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+                valid_meal_times = [meal_time.value for meal_time in MealTime]
                 validated_meal_times = [mt for mt in meal_time_list if mt in valid_meal_times]
                 if validated_meal_times:
                     filters["meal_times"] = validated_meal_times
@@ -218,7 +218,7 @@ class RecipeService:
     
     async def get_recipes_by_meal_times(self, meal_times: List[str]) -> List[Recipe]:
         """Get recipes filtered by meal times with validation"""
-        valid_meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "dessert"]
+        valid_meal_times = [meal_time.value for meal_time in MealTime]
         invalid_meal_times = [mt for mt in meal_times if mt not in valid_meal_times]
         if invalid_meal_times:
             raise HTTPException(status_code=400, detail=f"Invalid meal times: {invalid_meal_times}")

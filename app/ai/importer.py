@@ -45,7 +45,8 @@ class RecipeImporter:
         max_retries: int = 3,
         retry_delay: float = 1.0,
         timeout: int = 30,
-        openai_api_key: Optional[str] = None
+        openai_api_key: Optional[str] = None,
+        api_key: Optional[str] = None
     ):
         """
         Initialize the recipe importer.
@@ -56,14 +57,18 @@ class RecipeImporter:
             retry_delay: Delay between retries in seconds
             timeout: Timeout for web requests
             openai_api_key: OpenAI API key for AI extraction (optional)
+            api_key: Alternative parameter name for API key (for backward compatibility)
         """
         self.recipe_repository = recipe_repository
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.timeout = timeout
         
+        # Use either parameter for the API key
+        actual_api_key = api_key or openai_api_key
+        
         self.scraper = RecipeScraper(timeout=timeout)
-        self.extractor = RecipeExtractor(use_ai=True, api_key=openai_api_key)
+        self.extractor = RecipeExtractor(use_ai=True, api_key=actual_api_key)
         self.transformer = RecipeTransformer()
 
     async def import_recipe_from_url(self, url: str, user_metadata: Optional[Dict[str, Any]] = None) -> ImportResult:
@@ -280,6 +285,7 @@ class RecipeImporter:
                 logger.error(f"Batch import task failed: {result}")
                 continue
             
+            # At this point, result is guaranteed to be a tuple
             url, import_result = result
             import_results[url] = import_result
         

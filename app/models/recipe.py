@@ -50,7 +50,7 @@ class Recipe(Document):
     meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
     
     # Source and media
-    source: Source = Field(default_factory=Source)
+    source: Source = Field(default_factory=lambda: Source(type="manual"))
     images: List[str] = Field(default_factory=list, max_length=10)
     
     # Timestamps - automatically managed
@@ -139,7 +139,7 @@ class RecipeCreate(BaseModel):
     difficulty: Optional[Literal["easy", "medium", "hard"]] = None
     tags: List[str] = Field(default_factory=list, max_length=20)
     meal_times: List[MealTime] = Field(default_factory=list, max_length=6)
-    source: Source = Field(default_factory=Source)
+    source: Source = Field(default_factory=lambda: Source())
     images: List[str] = Field(default_factory=list, max_length=10)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
@@ -238,7 +238,7 @@ class RecipeResponse(BaseModel):
     difficulty: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     meal_times: List[str] = Field(default_factory=list)
-    source: Source = Field(default_factory=Source)
+    source: Source = Field(default_factory=lambda: Source(type="manual"))
     images: List[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
