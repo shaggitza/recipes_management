@@ -418,6 +418,8 @@ class RecipeManager {
                             </div>
                         ` : ''}
 
+                        ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? this.renderApplianceSettings(recipe.appliance_settings) : ''}
+
                         ${recipe.source && recipe.source.url ? `
                             <div class="recipe-source">
                                 <i class="fas fa-link"></i> 
@@ -487,97 +489,222 @@ class RecipeManager {
     }
 
     renderRecipeDetail(recipe) {
+        // Generate sidebar content for desktop
+        const sidebarContent = this.renderRecipeSidebar(recipe);
+        
+        // Generate main content
+        const mainContent = this.renderRecipeMainContent(recipe);
+        
         return `
-            ${recipe.description ? `<p style="margin-bottom: 2rem; font-size: 1.1rem; color: #666;">${this.escapeHtml(recipe.description)}</p>` : ''}
+            ${recipe.description ? `<p class="recipe-description">${this.escapeHtml(recipe.description)}</p>` : ''}
             
             ${recipe.images && recipe.images.length > 0 ? this.displayRecipeImages(recipe.images) : ''}
             
-            <div class="detail-meta">
+            <!-- Mobile meta (hidden on desktop) -->
+            <div class="detail-meta mobile-only">
+                ${this.renderRecipeMetaMobile(recipe)}
+            </div>
+            
+            <!-- Desktop two-column layout -->
+            <div class="recipe-main-content">
+                ${mainContent}
+            </div>
+            
+            <div class="recipe-sidebar desktop-only">
+                ${sidebarContent}
+            </div>
+        `;
+    }
+    
+    renderRecipeSidebar(recipe) {
+        return `
+            <!-- Recipe meta for desktop -->
+            <div class="recipe-meta-desktop">
                 ${recipe.prep_time ? `
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-value">${recipe.prep_time}</span>
-                        <span class="detail-meta-label">Prep (min)</span>
+                    <div class="recipe-meta-card">
+                        <span class="recipe-meta-value">${recipe.prep_time}</span>
+                        <span class="recipe-meta-label">Prep (min)</span>
                     </div>
                 ` : ''}
                 ${recipe.cook_time ? `
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-value">${recipe.cook_time}</span>
-                        <span class="detail-meta-label">Cook (min)</span>
+                    <div class="recipe-meta-card">
+                        <span class="recipe-meta-value">${recipe.cook_time}</span>
+                        <span class="recipe-meta-label">Cook (min)</span>
                     </div>
                 ` : ''}
                 ${recipe.servings ? `
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-value">${recipe.servings}</span>
-                        <span class="detail-meta-label">Servings</span>
+                    <div class="recipe-meta-card">
+                        <span class="recipe-meta-value">${recipe.servings}</span>
+                        <span class="recipe-meta-label">Servings</span>
                     </div>
                 ` : ''}
                 ${recipe.difficulty ? `
-                    <div class="detail-meta-item">
-                        <span class="detail-meta-value">${this.capitalize(recipe.difficulty)}</span>
-                        <span class="detail-meta-label">Difficulty</span>
+                    <div class="recipe-meta-card">
+                        <span class="recipe-meta-value">${this.capitalize(recipe.difficulty)}</span>
+                        <span class="recipe-meta-label">Difficulty</span>
                     </div>
                 ` : ''}
             </div>
-
+            
+            ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-tools"></i> Appliances</h4>
+                    <div class="sidebar-appliances">
+                        ${recipe.appliance_settings.map(setting => this.renderSidebarAppliance(setting)).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${recipe.tags && recipe.tags.length > 0 ? `
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-tags"></i> Tags</h4>
+                    <div class="sidebar-tags">
+                        ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-clock"></i> Meal Times</h4>
+                    <div class="sidebar-tags">
+                        ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${recipe.source && (recipe.source.url || recipe.source.name) ? `
+                <div class="sidebar-section">
+                    <h4><i class="fas fa-link"></i> Source</h4>
+                    <p class="sidebar-source">
+                        ${recipe.source.name ? this.escapeHtml(recipe.source.name) : this.capitalize(recipe.source.type || 'Unknown')}
+                        ${recipe.source.url ? `<br><a href="${recipe.source.url}" target="_blank" class="source-link">${recipe.source.url}</a>` : ''}
+                    </p>
+                </div>
+            ` : ''}
+        `;
+    }
+    
+    renderRecipeMainContent(recipe) {
+        return `
             ${recipe.ingredients && recipe.ingredients.length > 0 ? `
                 <div class="detail-section">
                     <h3><i class="fas fa-list"></i> Ingredients</h3>
-                    <ul class="ingredients-list">
+                    <div class="ingredients-container">
                         ${recipe.ingredients.map(ing => `
-                            <li>
-                                <span class="ingredient-name">${this.escapeHtml(ing.name)}</span>
-                                <span class="ingredient-amount">${this.escapeHtml(ing.amount)}${ing.unit ? ` ${this.escapeHtml(ing.unit)}` : ''}</span>
-                            </li>
+                            <div class="ingredients-grid">
+                                <div class="ingredient-name">${this.escapeHtml(ing.name)}</div>
+                                <div class="ingredient-amount">${this.escapeHtml(ing.amount)}</div>
+                                <div class="ingredient-unit">${ing.unit ? this.escapeHtml(ing.unit) : ''}</div>
+                            </div>
                         `).join('')}
-                    </ul>
+                    </div>
                 </div>
             ` : ''}
 
             ${recipe.instructions && recipe.instructions.length > 0 ? `
                 <div class="detail-section">
                     <h3><i class="fas fa-tasks"></i> Instructions</h3>
-                    <ol class="instructions-list">
-                        ${recipe.instructions.map(inst => `<li>${this.escapeHtml(inst)}</li>`).join('')}
-                    </ol>
-                </div>
-            ` : ''}
-
-            ${recipe.tags && recipe.tags.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-tags"></i> Tags</h3>
-                    <div class="detail-tags">
-                        ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                    <div class="instructions-container">
+                        ${recipe.instructions.map((inst, index) => `
+                            <div class="instruction-item">
+                                <div class="instruction-number">${index + 1}</div>
+                                <div class="instruction-text">${this.escapeHtml(inst)}</div>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             ` : ''}
-
-            ${recipe.meal_times && recipe.meal_times.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-clock"></i> Meal Times</h3>
-                    <div class="detail-tags">
-                        ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+            
+            <!-- Mobile-only sections -->
+            <div class="mobile-only">
+                ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                        <div class="appliance-settings-display">
+                            ${recipe.appliance_settings.map(setting => this.renderApplianceSettingDetail(setting)).join('')}
+                        </div>
                     </div>
-                </div>
-            ` : ''}
-
-            ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
-                    <div class="appliance-settings-display">
-                        ${recipe.appliance_settings.map(setting => this.renderApplianceSettingDetail(setting)).join('')}
+                ` : ''}
+                
+                ${recipe.tags && recipe.tags.length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-tags"></i> Tags</h3>
+                        <div class="detail-tags">
+                            ${recipe.tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}
+                        </div>
                     </div>
-                </div>
-            ` : ''}
+                ` : ''}
 
-            ${recipe.source && (recipe.source.url || recipe.source.name) ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-link"></i> Source</h3>
-                    <p>
-                        ${recipe.source.name ? this.escapeHtml(recipe.source.name) : this.capitalize(recipe.source.type || 'Unknown')}
-                        ${recipe.source.url ? `<br><a href="${recipe.source.url}" target="_blank" class="source-link">${recipe.source.url}</a>` : ''}
-                    </p>
+                ${recipe.meal_times && recipe.meal_times.length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-clock"></i> Meal Times</h3>
+                        <div class="detail-tags">
+                            ${recipe.meal_times.map(mealTime => `<span class="tag meal-time-tag">${this.escapeHtml(this.capitalize(mealTime))}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${recipe.source && (recipe.source.url || recipe.source.name) ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-link"></i> Source</h3>
+                        <p>
+                            ${recipe.source.name ? this.escapeHtml(recipe.source.name) : this.capitalize(recipe.source.type || 'Unknown')}
+                            ${recipe.source.url ? `<br><a href="${recipe.source.url}" target="_blank" class="source-link">${recipe.source.url}</a>` : ''}
+                        </p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+    
+    renderRecipeMetaMobile(recipe) {
+        return `
+            ${recipe.prep_time ? `
+                <div class="detail-meta-item">
+                    <span class="detail-meta-value">${recipe.prep_time}</span>
+                    <span class="detail-meta-label">Prep (min)</span>
                 </div>
             ` : ''}
+            ${recipe.cook_time ? `
+                <div class="detail-meta-item">
+                    <span class="detail-meta-value">${recipe.cook_time}</span>
+                    <span class="detail-meta-label">Cook (min)</span>
+                </div>
+            ` : ''}
+            ${recipe.servings ? `
+                <div class="detail-meta-item">
+                    <span class="detail-meta-value">${recipe.servings}</span>
+                    <span class="detail-meta-label">Servings</span>
+                </div>
+            ` : ''}
+            ${recipe.difficulty ? `
+                <div class="detail-meta-item">
+                    <span class="detail-meta-value">${this.capitalize(recipe.difficulty)}</span>
+                    <span class="detail-meta-label">Difficulty</span>
+                </div>
+            ` : ''}
+        `;
+    }
+    
+    renderSidebarAppliance(setting) {
+        const applianceTypeLabel = this.getApplianceTypeLabel(setting.appliance_type);
+        const icon = this.getApplianceTypeIcon(setting.appliance_type);
+        
+        return `
+            <div class="sidebar-appliance">
+                <div class="sidebar-appliance-header">
+                    <i class="${icon}"></i>
+                    <span>${applianceTypeLabel}</span>
+                </div>
+                <div class="sidebar-appliance-details">
+                    ${setting.temperature_celsius ? `<span>${setting.temperature_celsius}°C</span>` : ''}
+                    ${setting.flame_level ? `<span>${this.escapeHtml(setting.flame_level)}</span>` : ''}
+                    ${setting.heat_level ? `<span>${this.escapeHtml(setting.heat_level)}</span>` : ''}
+                    ${setting.power_level ? `<span>Power ${setting.power_level}/10</span>` : ''}
+                    ${setting.duration_minutes ? `<span>${setting.duration_minutes} min</span>` : ''}
+                </div>
+            </div>
         `;
     }
 
@@ -650,6 +777,123 @@ class RecipeManager {
 
         settingDetails += `</div>`;
         return settingDetails;
+    }
+
+    showApplianceTooltip(event, element) {
+        const applianceType = element.dataset.applianceType;
+        const recipe = this.findRecipeWithAppliance(applianceType, element);
+        
+        if (!recipe) return;
+        
+        const setting = recipe.appliance_settings.find(s => s.appliance_type === applianceType);
+        if (!setting) return;
+        
+        // Remove existing tooltip
+        this.hideApplianceTooltip();
+        
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'appliance-tooltip';
+        tooltip.innerHTML = this.renderApplianceTooltipContent(setting);
+        
+        document.body.appendChild(tooltip);
+        
+        // Position tooltip
+        const rect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        let top = rect.bottom + 8;
+        
+        // Adjust if tooltip goes off screen
+        if (left < 10) left = 10;
+        if (left + tooltipRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipRect.width - 10;
+        }
+        if (top + tooltipRect.height > window.innerHeight - 10) {
+            top = rect.top - tooltipRect.height - 8;
+        }
+        
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.style.opacity = '1';
+        
+        this.currentTooltip = tooltip;
+    }
+    
+    hideApplianceTooltip() {
+        if (this.currentTooltip) {
+            this.currentTooltip.remove();
+            this.currentTooltip = null;
+        }
+    }
+    
+    findRecipeWithAppliance(applianceType, element) {
+        // Find the recipe card that contains this appliance icon
+        const recipeCard = element.closest('.recipe-card');
+        if (!recipeCard) return null;
+        
+        // Find the recipe title to match with our recipe data
+        const titleElement = recipeCard.querySelector('.recipe-card-title');
+        if (!titleElement) return null;
+        
+        const title = titleElement.textContent.trim();
+        return this.recipes.find(recipe => recipe.title === title);
+    }
+    
+    renderApplianceTooltipContent(setting) {
+        const applianceTypeLabel = this.getApplianceTypeLabel(setting.appliance_type);
+        let content = `
+            <div class="tooltip-header">
+                <i class="${this.getApplianceTypeIcon(setting.appliance_type)}"></i>
+                <strong>${applianceTypeLabel}</strong>
+            </div>
+            <div class="tooltip-content">
+        `;
+        
+        // Add specific fields based on appliance type
+        if (setting.flame_level) {
+            content += `<div><span class="tooltip-label">Flame Level:</span> ${this.escapeHtml(setting.flame_level)}</div>`;
+        }
+        if (setting.heat_level) {
+            content += `<div><span class="tooltip-label">Heat Level:</span> ${this.escapeHtml(setting.heat_level)}</div>`;
+        }
+        if (setting.temperature_celsius) {
+            content += `<div><span class="tooltip-label">Temperature:</span> ${setting.temperature_celsius}°C</div>`;
+        }
+        if (setting.power_level) {
+            content += `<div><span class="tooltip-label">Power Level:</span> ${setting.power_level}/10</div>`;
+        }
+        if (setting.duration_minutes) {
+            content += `<div><span class="tooltip-label">Duration:</span> ${setting.duration_minutes} min</div>`;
+        }
+        if (setting.heat_zone) {
+            content += `<div><span class="tooltip-label">Heat Zone:</span> ${this.escapeHtml(setting.heat_zone)}</div>`;
+        }
+        if (setting.rack_position) {
+            content += `<div><span class="tooltip-label">Rack Position:</span> ${this.escapeHtml(setting.rack_position)}</div>`;
+        }
+        if (setting.lid_position) {
+            content += `<div><span class="tooltip-label">Lid Position:</span> ${this.escapeHtml(setting.lid_position)}</div>`;
+        }
+        if (setting.preheat_required !== undefined) {
+            content += `<div><span class="tooltip-label">Preheat:</span> ${setting.preheat_required ? 'Yes' : 'No'}</div>`;
+        }
+        if (setting.convection !== undefined) {
+            content += `<div><span class="tooltip-label">Convection:</span> ${setting.convection ? 'Yes' : 'No'}</div>`;
+        }
+        if (setting.shake_interval_minutes) {
+            content += `<div><span class="tooltip-label">Shake Every:</span> ${setting.shake_interval_minutes} min</div>`;
+        }
+        
+        content += '</div>';
+        
+        // Add notes if any
+        if (setting.notes) {
+            content += `<div class="tooltip-notes"><span class="tooltip-label">Notes:</span> ${this.escapeHtml(setting.notes)}</div>`;
+        }
+        
+        return content;
     }
 
     showAddModal() {
@@ -1098,6 +1342,45 @@ class RecipeManager {
             'stove': 'General Stove'
         };
         return labels[type] || type;
+    }
+
+    getApplianceTypeIcon(type) {
+        const icons = {
+            'gas_burner': 'fas fa-fire',
+            'airfryer': 'fas fa-fan',
+            'electric_grill': 'fas fa-border-all',
+            'electric_stove': 'fas fa-bolt',
+            'induction_stove': 'fas fa-circle-dot',
+            'oven': 'fas fa-door-open',
+            'charcoal_grill': 'fas fa-fire-burner',
+            'stove': 'fas fa-fire'
+        };
+        return icons[type] || 'fas fa-tools';
+    }
+
+    renderApplianceSettings(settings) {
+        if (!settings || settings.length === 0) return '';
+        
+        return `
+            <div class="recipe-appliances">
+                ${settings.map(setting => this.renderApplianceIcon(setting)).join('')}
+            </div>
+        `;
+    }
+
+    renderApplianceIcon(setting) {
+        const icon = this.getApplianceTypeIcon(setting.appliance_type);
+        const label = this.getApplianceTypeLabel(setting.appliance_type);
+        
+        return `
+            <div class="appliance-icon" 
+                 data-appliance-type="${setting.appliance_type}"
+                 data-tooltip="${this.escapeHtml(label)}"
+                 onmouseenter="recipeManager.showApplianceTooltip(event, this)"
+                 onmouseleave="recipeManager.hideApplianceTooltip()">
+                <i class="${icon}"></i>
+            </div>
+        `;
     }
 
     generateApplianceFieldsHtml(applianceType, applianceSetting = null) {

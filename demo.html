@@ -91,6 +91,18 @@
                             <span class="tag meal-time-tag">Lunch</span>
                             <span class="tag meal-time-tag">Dinner</span>
                         </div>
+                        <div class="recipe-appliances">
+                            <div class="appliance-icon" data-appliance-type="gas_burner" data-tooltip="Gas Burner" 
+                                 onmouseenter="showDemoTooltip(event, this, 'Gas Burner', 'Flame Level: Medium-High')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="appliance-icon" data-appliance-type="stove" data-tooltip="General Stove"
+                                 onmouseenter="showDemoTooltip(event, this, 'General Stove', 'Heat Level: Medium')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -114,6 +126,13 @@
                         <div class="recipe-meal-times">
                             <span class="tag meal-time-tag">Snack</span>
                             <span class="tag meal-time-tag">Dessert</span>
+                        </div>
+                        <div class="recipe-appliances">
+                            <div class="appliance-icon" data-appliance-type="oven" data-tooltip="Oven"
+                                 onmouseenter="showDemoTooltip(event, this, 'Oven', 'Temperature: 180°C<br>Duration: 12 min<br>Rack Position: Middle')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-door-open"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -162,6 +181,13 @@
                         <div class="recipe-meal-times">
                             <span class="tag meal-time-tag">Dinner</span>
                         </div>
+                        <div class="recipe-appliances">
+                            <div class="appliance-icon" data-appliance-type="electric_stove" data-tooltip="Electric Stove"
+                                 onmouseenter="showDemoTooltip(event, this, 'Electric Stove', 'Heat Level: High<br>Duration: 8 min')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -185,6 +211,18 @@
                         <div class="recipe-meal-times">
                             <span class="tag meal-time-tag">Lunch</span>
                             <span class="tag meal-time-tag">Dinner</span>
+                        </div>
+                        <div class="recipe-appliances">
+                            <div class="appliance-icon" data-appliance-type="oven" data-tooltip="Oven"
+                                 onmouseenter="showDemoTooltip(event, this, 'Oven', 'Temperature: 220°C<br>Duration: 15 min<br>Rack Position: Bottom')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="appliance-icon" data-appliance-type="gas_burner" data-tooltip="Gas Burner"
+                                 onmouseenter="showDemoTooltip(event, this, 'Gas Burner', 'Flame Level: Medium<br>For dough preparation')"
+                                 onmouseleave="hideDemoTooltip()">
+                                <i class="fas fa-fire"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -217,15 +255,72 @@
     </div>
 
     <script>
+        let currentTooltip = null;
+        
+        function showDemoTooltip(event, element, title, content) {
+            // Remove existing tooltip
+            hideDemoTooltip();
+            
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'appliance-tooltip';
+            tooltip.innerHTML = `
+                <div class="tooltip-header">
+                    <i class="${element.querySelector('i').className}"></i>
+                    <strong>${title}</strong>
+                </div>
+                <div class="tooltip-content">
+                    ${content}
+                </div>
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            // Position tooltip
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            let top = rect.bottom + 8;
+            
+            // Adjust if tooltip goes off screen
+            if (left < 10) left = 10;
+            if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+            if (top + tooltipRect.height > window.innerHeight - 10) {
+                top = rect.top - tooltipRect.height - 8;
+            }
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+            tooltip.style.opacity = '1';
+            
+            currentTooltip = tooltip;
+        }
+        
+        function hideDemoTooltip() {
+            if (currentTooltip) {
+                currentTooltip.remove();
+                currentTooltip = null;
+            }
+        }
+
         // Simple demo interaction
         document.addEventListener('DOMContentLoaded', function() {
             // Add hover effects and basic interactions
             const cards = document.querySelectorAll('.recipe-card');
             cards.forEach(card => {
                 card.addEventListener('click', function(e) {
+                    // Don't trigger card click if clicking on appliance icon
+                    if (e.target.closest('.appliance-icon')) {
+                        e.stopPropagation();
+                        return;
+                    }
+                    
                     e.preventDefault();
                     const title = card.querySelector('.recipe-card-title').textContent;
-                    alert(`Recipe page for "${title}" would open here!\n\nThis demonstrates the new navigation to individual recipe pages instead of modals.`);
+                    alert(`Recipe page for "${title}" would open here!\n\nThis demonstrates the new navigation to individual recipe pages instead of modals with the improved desktop layout.`);
                 });
             });
 
@@ -241,7 +336,7 @@
                 });
             });
 
-            console.log('Recipe Management Demo Loaded - UI Refactoring Complete!');
+            console.log('Recipe Management Demo Loaded - UI Refactoring Complete with Appliance Icons!');
         });
     </script>
 </body>
