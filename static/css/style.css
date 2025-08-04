@@ -1862,72 +1862,164 @@ body {
 /* Appliance Settings Display in Detail View */
 .appliance-settings-display {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
 }
 
 .appliance-setting-detail {
-    background-color: #f8f9fa;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 15px;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.appliance-setting-detail:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .appliance-setting-title {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 10px;
-    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 18px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
 }
 
 .appliance-setting-title i {
     color: #fd7e14;
+    font-size: 20px;
 }
 
-.appliance-setting-info {
+/* Setting Boxes Grid */
+.appliance-setting-boxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.setting-box {
+    background: #ffffff;
+    border: 1px solid #e3f2fd;
+    border-radius: 8px;
+    padding: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 5px;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.setting-box:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-color: #bbdefb;
+}
+
+.setting-box-icon {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+}
+
+.setting-box-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.setting-box-label {
+    font-size: 11px;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.setting-box-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Appliance Section Styling */
+.appliance-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #495057;
     margin-bottom: 10px;
-}
-
-.appliance-setting-info span {
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.appliance-utensils {
-    margin-top: 10px;
     font-size: 14px;
 }
 
-.appliance-utensils ul {
-    margin: 5px 0 0 20px;
-    padding: 0;
+.appliance-section-title i {
+    color: #fd7e14;
 }
 
-.appliance-utensils li {
-    color: #6c757d;
-    margin-bottom: 3px;
+/* Utensils Box */
+.appliance-utensils-box {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
 }
 
-.appliance-notes {
-    margin-top: 10px;
+.utensils-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.utensil-box {
+    background: #ffffff;
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #28a745;
+    white-space: nowrap;
+}
+
+/* Notes Box */
+.appliance-notes-box {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #fff3cd;
+    border-radius: 8px;
+    border-left: 4px solid #fd7e14;
+}
+
+.notes-content {
     font-size: 14px;
-    font-style: italic;
-    color: #6c757d;
-    background-color: white;
-    padding: 8px;
-    border-radius: 4px;
-    border-left: 3px solid #fd7e14;
+    color: #856404;
+    line-height: 1.4;
+    margin-top: 5px;
 }
 
 @media (max-width: 768px) {
     .appliance-settings-display {
         grid-template-columns: 1fr;
+    }
+    
+    .appliance-setting-boxes {
+        grid-template-columns: 1fr;
+    }
+    
+    .setting-box {
+        padding: 10px;
     }
 }
 

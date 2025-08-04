@@ -710,68 +710,148 @@ class RecipeManager {
 
     renderApplianceSettingDetail(setting) {
         const applianceTypeLabel = this.getApplianceTypeLabel(setting.appliance_type);
+        const icon = this.getApplianceTypeIcon(setting.appliance_type);
+        
         let settingDetails = `<div class="appliance-setting-detail">
             <div class="appliance-setting-title">
-                <i class="fas fa-fire"></i> ${applianceTypeLabel}
+                <i class="${icon}"></i> ${applianceTypeLabel}
             </div>
-            <div class="appliance-setting-info">`;
+            <div class="appliance-setting-boxes">`;
 
-        // Add specific fields based on appliance type
+        // Create individual boxes for each setting
+        const settingItems = [];
+        
         if (setting.flame_level) {
-            settingDetails += `<span><strong>Flame Level:</strong> ${this.escapeHtml(setting.flame_level)}</span>`;
+            settingItems.push({
+                icon: 'fas fa-fire',
+                label: 'Flame Level',
+                value: this.escapeHtml(setting.flame_level),
+                color: '#e74c3c'
+            });
         }
         if (setting.heat_level) {
-            settingDetails += `<span><strong>Heat Level:</strong> ${this.escapeHtml(setting.heat_level)}</span>`;
+            settingItems.push({
+                icon: 'fas fa-thermometer-half',
+                label: 'Heat Level',
+                value: this.escapeHtml(setting.heat_level),
+                color: '#f39c12'
+            });
         }
         if (setting.temperature_celsius) {
-            settingDetails += `<span><strong>Temperature:</strong> ${setting.temperature_celsius}°C</span>`;
+            settingItems.push({
+                icon: 'fas fa-temperature-high',
+                label: 'Temperature',
+                value: `${setting.temperature_celsius}°C`,
+                color: '#e67e22'
+            });
         }
         if (setting.power_level) {
-            settingDetails += `<span><strong>Power Level:</strong> ${setting.power_level}/10</span>`;
+            settingItems.push({
+                icon: 'fas fa-bolt',
+                label: 'Power Level',
+                value: `${setting.power_level}/10`,
+                color: '#3498db'
+            });
         }
         if (setting.duration_minutes) {
-            settingDetails += `<span><strong>Duration:</strong> ${setting.duration_minutes} min</span>`;
+            settingItems.push({
+                icon: 'fas fa-clock',
+                label: 'Duration',
+                value: `${setting.duration_minutes} min`,
+                color: '#9b59b6'
+            });
         }
         if (setting.heat_zone) {
-            settingDetails += `<span><strong>Heat Zone:</strong> ${this.escapeHtml(setting.heat_zone)}</span>`;
+            settingItems.push({
+                icon: 'fas fa-bullseye',
+                label: 'Heat Zone',
+                value: this.escapeHtml(setting.heat_zone),
+                color: '#16a085'
+            });
         }
         if (setting.rack_position) {
-            settingDetails += `<span><strong>Rack Position:</strong> ${this.escapeHtml(setting.rack_position)}</span>`;
+            settingItems.push({
+                icon: 'fas fa-layer-group',
+                label: 'Rack Position',
+                value: this.escapeHtml(setting.rack_position),
+                color: '#34495e'
+            });
         }
         if (setting.lid_position) {
-            settingDetails += `<span><strong>Lid Position:</strong> ${this.escapeHtml(setting.lid_position)}</span>`;
+            settingItems.push({
+                icon: 'fas fa-circle',
+                label: 'Lid Position',
+                value: this.escapeHtml(setting.lid_position),
+                color: '#7f8c8d'
+            });
         }
         if (setting.preheat_required !== undefined) {
-            settingDetails += `<span><strong>Preheat:</strong> ${setting.preheat_required ? 'Yes' : 'No'}</span>`;
+            settingItems.push({
+                icon: setting.preheat_required ? 'fas fa-check-circle' : 'fas fa-times-circle',
+                label: 'Preheat',
+                value: setting.preheat_required ? 'Required' : 'Not Required',
+                color: setting.preheat_required ? '#27ae60' : '#95a5a6'
+            });
         }
         if (setting.convection !== undefined) {
-            settingDetails += `<span><strong>Convection:</strong> ${setting.convection ? 'Yes' : 'No'}</span>`;
+            settingItems.push({
+                icon: setting.convection ? 'fas fa-wind' : 'fas fa-times',
+                label: 'Convection',
+                value: setting.convection ? 'Enabled' : 'Disabled',
+                color: setting.convection ? '#3498db' : '#95a5a6'
+            });
         }
         if (setting.shake_interval_minutes) {
-            settingDetails += `<span><strong>Shake Every:</strong> ${setting.shake_interval_minutes} min</span>`;
+            settingItems.push({
+                icon: 'fas fa-sync-alt',
+                label: 'Shake Every',
+                value: `${setting.shake_interval_minutes} min`,
+                color: '#e67e22'
+            });
         }
+
+        // Render setting boxes
+        settingItems.forEach(item => {
+            settingDetails += `
+                <div class="setting-box">
+                    <div class="setting-box-icon" style="color: ${item.color}">
+                        <i class="${item.icon}"></i>
+                    </div>
+                    <div class="setting-box-content">
+                        <div class="setting-box-label">${item.label}</div>
+                        <div class="setting-box-value">${item.value}</div>
+                    </div>
+                </div>`;
+        });
 
         settingDetails += `</div>`;
 
         // Add utensils if any
         if (setting.utensils && setting.utensils.length > 0) {
-            settingDetails += `<div class="appliance-utensils">
-                <strong>Utensils:</strong>
-                <ul>
+            settingDetails += `<div class="appliance-utensils-box">
+                <div class="appliance-section-title">
+                    <i class="fas fa-utensils"></i>
+                    <span>Required Utensils</span>
+                </div>
+                <div class="utensils-grid">
                     ${setting.utensils.map(utensil => {
                         let utensilText = this.escapeHtml(utensil.type);
                         if (utensil.size) utensilText += ` (${this.escapeHtml(utensil.size)})`;
                         if (utensil.material) utensilText += ` - ${this.escapeHtml(utensil.material)}`;
-                        return `<li>${utensilText}</li>`;
+                        return `<div class="utensil-box">${utensilText}</div>`;
                     }).join('')}
-                </ul>
+                </div>
             </div>`;
         }
 
         // Add notes if any
         if (setting.notes) {
-            settingDetails += `<div class="appliance-notes">
-                <strong>Notes:</strong> ${this.escapeHtml(setting.notes)}
+            settingDetails += `<div class="appliance-notes-box">
+                <div class="appliance-section-title">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Notes</span>
+                </div>
+                <div class="notes-content">${this.escapeHtml(setting.notes)}</div>
             </div>`;
         }
 
