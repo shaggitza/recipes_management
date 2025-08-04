@@ -120,6 +120,8 @@ async def home(request: Request):
     logger.debug("Serving home page")
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

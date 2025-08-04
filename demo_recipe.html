@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Recipe Manager">
+    <title>Classic Pasta Carbonara - Recipe Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Additional demo styles */
+        .demo-banner {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 1rem;
+            text-align: center;
+            color: #2d3436;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="recipe-detail-page">
+        <!-- Demo Banner -->
+        <div class="container">
+            <div class="demo-banner">
+                <i class="fas fa-info-circle"></i>
+                Demo Recipe Detail Page - Individual Page Instead of Modal
+            </div>
+        </div>
+
+        <!-- Navigation Header -->
+        <header class="recipe-header">
+            <nav class="recipe-nav">
+                <a href="demo.html" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Recipes</span>
+                </a>
+                <div class="recipe-actions">
+                    <button class="btn btn-secondary" onclick="alert('Edit functionality would work here!')">
+                        <i class="fas fa-edit"></i> 
+                        <span class="btn-text">Edit</span>
+                    </button>
+                    <button class="btn btn-danger" onclick="alert('Delete functionality would work here!')">
+                        <i class="fas fa-trash"></i> 
+                        <span class="btn-text">Delete</span>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="recipe-main">
+            <div class="recipe-container">
+                <!-- Recipe Content -->
+                <div class="recipe-content">
+                    <!-- Recipe header with title and image -->
+                    <div class="recipe-hero">
+                        <div class="recipe-images">
+                            <div class="recipe-image-gallery">
+                                <div class="recipe-image-item" onclick="showImageDemo()">
+                                    <img src="https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&h=300&fit=crop" alt="Classic Pasta Carbonara" />
+                                </div>
+                                <div class="recipe-image-item" onclick="showImageDemo()">
+                                    <img src="https://images.unsplash.com/photo-1563379091339-03246968d4d6?w=400&h=300&fit=crop" alt="Pasta cooking process" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="recipe-title-section">
+                            <h1 class="recipe-title">Classic Pasta Carbonara</h1>
+                            <p class="recipe-description">A traditional Italian pasta dish with eggs, cheese, and pancetta. This authentic recipe creates a creamy sauce without using cream, relying on the technique of tempering eggs with hot pasta water.</p>
+                        </div>
+                    </div>
+
+                    <!-- Recipe meta information -->
+                    <div class="recipe-meta-grid">
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <div class="meta-content">
+                                <div class="meta-value">15 min</div>
+                                <div class="meta-label">Prep Time</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-fire"></i>
+                            <div class="meta-content">
+                                <div class="meta-value">20 min</div>
+                                <div class="meta-label">Cook Time</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-hourglass-half"></i>
+                            <div class="meta-content">
+                                <div class="meta-value">35 min</div>
+                                <div class="meta-label">Total Time</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-users"></i>
+                            <div class="meta-content">
+                                <div class="meta-value">4</div>
+                                <div class="meta-label">Servings</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-signal"></i>
+                            <div class="meta-content">
+                                <div class="meta-value">Medium</div>
+                                <div class="meta-label">Difficulty</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recipe sections -->
+                    <div class="recipe-sections">
+                        <!-- Ingredients Section -->
+                        <section class="recipe-section">
+                            <h2 class="section-title">
+                                <i class="fas fa-list"></i>
+                                Ingredients
+                            </h2>
+                            <div class="ingredients-list">
+                                <ul class="ingredients-list">
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Spaghetti</span>
+                                        <span class="ingredient-amount">400 g</span>
+                                    </li>
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Pancetta</span>
+                                        <span class="ingredient-amount">150 g</span>
+                                    </li>
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Eggs</span>
+                                        <span class="ingredient-amount">3 pieces</span>
+                                    </li>
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Parmesan Cheese</span>
+                                        <span class="ingredient-amount">100 g</span>
+                                    </li>
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Black Pepper</span>
+                                        <span class="ingredient-amount">1 tsp</span>
+                                    </li>
+                                    <li class="ingredient-item">
+                                        <span class="ingredient-name">Salt</span>
+                                        <span class="ingredient-amount">to taste</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <!-- Instructions Section -->
+                        <section class="recipe-section">
+                            <h2 class="section-title">
+                                <i class="fas fa-tasks"></i>
+                                Instructions
+                            </h2>
+                            <div class="instructions-list">
+                                <ol class="instructions-list">
+                                    <li class="instruction-item">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</li>
+                                    <li class="instruction-item">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy and golden, about 5-7 minutes.</li>
+                                    <li class="instruction-item">In a bowl, whisk together eggs, grated parmesan cheese, and freshly ground black pepper until well combined.</li>
+                                    <li class="instruction-item">Drain pasta and immediately add to the pan with pancetta. Remove the pan from heat.</li>
+                                    <li class="instruction-item">Quickly stir in the egg mixture while tossing the pasta vigorously. Add reserved pasta water gradually until you achieve a creamy sauce consistency.</li>
+                                    <li class="instruction-item">Serve immediately in warm bowls, garnished with extra parmesan cheese and freshly ground black pepper.</li>
+                                </ol>
+                            </div>
+                        </section>
+
+                        <!-- Tags Section -->
+                        <section class="recipe-section">
+                            <h2 class="section-title">
+                                <i class="fas fa-tags"></i>
+                                Tags
+                            </h2>
+                            <div class="detail-tags">
+                                <span class="tag">pasta</span>
+                                <span class="tag">dinner</span>
+                                <span class="tag">italian</span>
+                                <span class="tag">quick</span>
+                                <span class="tag">traditional</span>
+                            </div>
+                        </section>
+
+                        <!-- Meal Times Section -->
+                        <section class="recipe-section">
+                            <h2 class="section-title">
+                                <i class="fas fa-clock"></i>
+                                Meal Times
+                            </h2>
+                            <div class="detail-tags">
+                                <span class="tag meal-time-tag">Lunch</span>
+                                <span class="tag meal-time-tag">Dinner</span>
+                            </div>
+                        </section>
+
+                        <!-- Source Section -->
+                        <section class="recipe-section">
+                            <h2 class="section-title">
+                                <i class="fas fa-link"></i>
+                                Source
+                            </h2>
+                            <div class="source-info">
+                                <p>
+                                    Traditional Italian Recipe
+                                    <br><a href="#" class="source-link" onclick="alert('Source link would work here!')">View Original Source</a>
+                                </p>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Image lightbox -->
+    <div id="imageLightbox" class="image-lightbox" style="display: none;">
+        <div class="lightbox-content">
+            <img id="lightboxImage" src="" alt="Recipe image" />
+            <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        function showImageDemo() {
+            alert('Image lightbox would open here!\n\nThis demonstrates the new image viewing functionality.');
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightbox').style.display = 'none';
+        }
+
+        // Demo functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Recipe Detail Demo Page Loaded - Standalone Page Design!');
+            
+            // Add some interactive effects
+            const instructionItems = document.querySelectorAll('.instruction-item');
+            instructionItems.forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    item.style.backgroundColor = '#e9ecef';
+                    setTimeout(() => {
+                        item.style.backgroundColor = '#f8f9fa';
+                    }, 200);
+                });
+            });
+
+            const ingredientItems = document.querySelectorAll('.ingredient-item');
+            ingredientItems.forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    item.style.backgroundColor = '#e9ecef';
+                    setTimeout(() => {
+                        item.style.backgroundColor = '#f8f9fa';
+                    }, 200);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
