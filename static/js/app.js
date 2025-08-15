@@ -587,37 +587,80 @@ class RecipeManager {
     
     renderRecipeMainContent(recipe) {
         return `
-            ${recipe.ingredients && recipe.ingredients.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-list"></i> Ingredients</h3>
-                    <div class="ingredients-container">
-                        ${recipe.ingredients.map(ing => `
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">${this.escapeHtml(ing.name)}</div>
-                                <div class="ingredient-amount">${this.escapeHtml(ing.amount)}</div>
-                                <div class="ingredient-unit">${ing.unit ? this.escapeHtml(ing.unit) : ''}</div>
+            <!-- Desktop two-column layout for ingredients and instructions -->
+            <div class="desktop-only">
+                <div class="recipe-content-columns">
+                    ${recipe.ingredients && recipe.ingredients.length > 0 ? `
+                        <div class="detail-section ingredients-column">
+                            <h3><i class="fas fa-list"></i> Ingredients</h3>
+                            <div class="ingredients-container">
+                                ${recipe.ingredients.map(ing => `
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">${this.escapeHtml(ing.name)}</div>
+                                        <div class="ingredient-amount">${this.escapeHtml(ing.amount)}</div>
+                                        <div class="ingredient-unit">${ing.unit ? this.escapeHtml(ing.unit) : ''}</div>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : ''}
+                        </div>
+                    ` : ''}
 
-            ${recipe.instructions && recipe.instructions.length > 0 ? `
-                <div class="detail-section">
-                    <h3><i class="fas fa-tasks"></i> Instructions</h3>
-                    <div class="instructions-container">
-                        ${recipe.instructions.map((inst, index) => `
-                            <div class="instruction-item">
-                                <div class="instruction-number">${index + 1}</div>
-                                <div class="instruction-text">${this.escapeHtml(inst)}</div>
+                    ${recipe.instructions && recipe.instructions.length > 0 ? `
+                        <div class="detail-section instructions-column">
+                            <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                            <div class="instructions-container">
+                                ${recipe.instructions.map((inst, index) => `
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">${index + 1}</div>
+                                        <div class="instruction-text">${this.escapeHtml(inst)}</div>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
-                    </div>
+                        </div>
+                    ` : ''}
                 </div>
-            ` : ''}
-            
-            <!-- Mobile-only sections -->
+                
+                ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
+                    <div class="detail-section desktop-appliances">
+                        <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                        <div class="appliance-settings-display">
+                            ${recipe.appliance_settings.map(setting => this.renderApplianceSettingDetail(setting)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- Mobile vertical layout -->
             <div class="mobile-only">
+                ${recipe.ingredients && recipe.ingredients.length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-list"></i> Ingredients</h3>
+                        <div class="ingredients-container">
+                            ${recipe.ingredients.map(ing => `
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">${this.escapeHtml(ing.name)}</div>
+                                    <div class="ingredient-amount">${this.escapeHtml(ing.amount)}</div>
+                                    <div class="ingredient-unit">${ing.unit ? this.escapeHtml(ing.unit) : ''}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${recipe.instructions && recipe.instructions.length > 0 ? `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                        <div class="instructions-container">
+                            ${recipe.instructions.map((inst, index) => `
+                                <div class="instruction-item">
+                                    <div class="instruction-number">${index + 1}</div>
+                                    <div class="instruction-text">${this.escapeHtml(inst)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
                 ${recipe.appliance_settings && recipe.appliance_settings.length > 0 ? `
                     <div class="detail-section">
                         <h3><i class="fas fa-tools"></i> Appliance Settings</h3>

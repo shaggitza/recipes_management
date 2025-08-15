@@ -2694,6 +2694,56 @@ body {
     font-style: italic;
 }
 
+/* Desktop two-column layout for ingredients and instructions */
+.recipe-content-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.ingredients-column,
+.instructions-column {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    height: fit-content;
+}
+
+.instructions-column {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.instructions-column::-webkit-scrollbar {
+    width: 6px;
+}
+
+.instructions-column::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.instructions-column::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 3px;
+}
+
+.instructions-column::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.5);
+}
+
+.desktop-appliances {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Mobile responsive adjustments for recipe detail page */
 @media (max-width: 768px) {
     .recipe-detail-header .container {

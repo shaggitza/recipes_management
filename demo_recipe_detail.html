@@ -25,7 +25,7 @@
     <div id="recipeDetailPage" class="recipe-detail-page">
         <div class="demo-banner">
             <i class="fas fa-info-circle"></i>
-            Demo - New Desktop Recipe Detail Layout with Responsive Design
+            Demo - Improved Desktop Recipe Layout: Side-by-Side Ingredients & Instructions for Compact Viewing
         </div>
         
         <div class="recipe-detail-header">
@@ -72,76 +72,205 @@
                         </div>
                     </div>
                     
-                    <!-- Ingredients Section -->
-                    <div class="detail-section">
-                        <h3><i class="fas fa-list"></i> Ingredients</h3>
-                        <div class="ingredients-container">
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Spaghetti</div>
-                                <div class="ingredient-amount">400</div>
-                                <div class="ingredient-unit">g</div>
+                    <!-- Desktop two-column layout for ingredients and instructions -->
+                    <div class="desktop-only">
+                        <div class="recipe-content-columns">
+                            <div class="detail-section ingredients-column">
+                                <h3><i class="fas fa-list"></i> Ingredients</h3>
+                                <div class="ingredients-container">
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Spaghetti</div>
+                                        <div class="ingredient-amount">400</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Pancetta</div>
+                                        <div class="ingredient-amount">150</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Large Eggs</div>
+                                        <div class="ingredient-amount">3</div>
+                                        <div class="ingredient-unit">pieces</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Parmesan Cheese (grated)</div>
+                                        <div class="ingredient-amount">100</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Black Pepper (freshly ground)</div>
+                                        <div class="ingredient-amount">1</div>
+                                        <div class="ingredient-unit">tsp</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Salt</div>
+                                        <div class="ingredient-amount">to taste</div>
+                                        <div class="ingredient-unit"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Pancetta</div>
-                                <div class="ingredient-amount">150</div>
-                                <div class="ingredient-unit">g</div>
+
+                            <div class="detail-section instructions-column">
+                                <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                                <div class="instructions-container">
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">1</div>
+                                        <div class="instruction-text">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">2</div>
+                                        <div class="instruction-text">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy, about 5-7 minutes.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">3</div>
+                                        <div class="instruction-text">In a bowl, whisk together eggs, grated parmesan, and freshly ground black pepper. Set aside.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">4</div>
+                                        <div class="instruction-text">Add the drained hot pasta to the pan with pancetta. Remove from heat immediately.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">5</div>
+                                        <div class="instruction-text">Quickly stir in the egg mixture, tossing vigorously with tongs to create a creamy sauce. Add pasta water gradually if needed.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">6</div>
+                                        <div class="instruction-text">Serve immediately with extra parmesan and black pepper. Enjoy your authentic Carbonara!</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Large Eggs</div>
-                                <div class="ingredient-amount">3</div>
-                                <div class="ingredient-unit">pieces</div>
-                            </div>
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Parmesan Cheese (grated)</div>
-                                <div class="ingredient-amount">100</div>
-                                <div class="ingredient-unit">g</div>
-                            </div>
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Black Pepper (freshly ground)</div>
-                                <div class="ingredient-amount">1</div>
-                                <div class="ingredient-unit">tsp</div>
-                            </div>
-                            <div class="ingredients-grid">
-                                <div class="ingredient-name">Salt</div>
-                                <div class="ingredient-amount">to taste</div>
-                                <div class="ingredient-unit"></div>
+                        </div>
+                        
+                        <div class="detail-section desktop-appliances">
+                            <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                            <div class="appliance-settings-display">
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> Gas Burner
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #e74c3c">
+                                                <i class="fas fa-fire"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Flame Level</div>
+                                                <div class="setting-box-value">Medium-High</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">5-7 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> General Stove
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #f39c12">
+                                                <i class="fas fa-thermometer-half"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Heat Level</div>
+                                                <div class="setting-box-value">Medium</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">10-12 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Instructions Section -->
-                    <div class="detail-section">
-                        <h3><i class="fas fa-tasks"></i> Instructions</h3>
-                        <div class="instructions-container">
-                            <div class="instruction-item">
-                                <div class="instruction-number">1</div>
-                                <div class="instruction-text">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</div>
-                            </div>
-                            <div class="instruction-item">
-                                <div class="instruction-number">2</div>
-                                <div class="instruction-text">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy, about 5-7 minutes.</div>
-                            </div>
-                            <div class="instruction-item">
-                                <div class="instruction-number">3</div>
-                                <div class="instruction-text">In a bowl, whisk together eggs, grated parmesan, and freshly ground black pepper. Set aside.</div>
-                            </div>
-                            <div class="instruction-item">
-                                <div class="instruction-number">4</div>
-                                <div class="instruction-text">Add the drained hot pasta to the pan with pancetta. Remove from heat immediately.</div>
-                            </div>
-                            <div class="instruction-item">
-                                <div class="instruction-number">5</div>
-                                <div class="instruction-text">Quickly stir in the egg mixture, tossing vigorously with tongs to create a creamy sauce. Add pasta water gradually if needed.</div>
-                            </div>
-                            <div class="instruction-item">
-                                <div class="instruction-number">6</div>
-                                <div class="instruction-text">Serve immediately with extra parmesan and black pepper. Enjoy your authentic Carbonara!</div>
+                    <!-- Mobile vertical layout -->
+                    <div class="mobile-only">
+                        <!-- Ingredients Section -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-list"></i> Ingredients</h3>
+                            <div class="ingredients-container">
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Spaghetti</div>
+                                    <div class="ingredient-amount">400</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Pancetta</div>
+                                    <div class="ingredient-amount">150</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Large Eggs</div>
+                                    <div class="ingredient-amount">3</div>
+                                    <div class="ingredient-unit">pieces</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Parmesan Cheese (grated)</div>
+                                    <div class="ingredient-amount">100</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Black Pepper (freshly ground)</div>
+                                    <div class="ingredient-amount">1</div>
+                                    <div class="ingredient-unit">tsp</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Salt</div>
+                                    <div class="ingredient-amount">to taste</div>
+                                    <div class="ingredient-unit"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
+
+                        <!-- Instructions Section -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                            <div class="instructions-container">
+                                <div class="instruction-item">
+                                    <div class="instruction-number">1</div>
+                                    <div class="instruction-text">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">2</div>
+                                    <div class="instruction-text">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy, about 5-7 minutes.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">3</div>
+                                    <div class="instruction-text">In a bowl, whisk together eggs, grated parmesan, and freshly ground black pepper. Set aside.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">4</div>
+                                    <div class="instruction-text">Add the drained hot pasta to the pan with pancetta. Remove from heat immediately.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">5</div>
+                                    <div class="instruction-text">Quickly stir in the egg mixture, tossing vigorously with tongs to create a creamy sauce. Add pasta water gradually if needed.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">6</div>
+                                    <div class="instruction-text">Serve immediately with extra parmesan and black pepper. Enjoy your authentic Carbonara!</div>
+                                </div>
+                            </div>
+                        
                     <!-- Mobile-only sections -->
                     <div class="mobile-only">
+                        
                         <div class="detail-section">
                             <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
                             <div class="appliance-settings-display">
