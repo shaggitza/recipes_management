@@ -1,6 +1,6 @@
-"""Simplified AI-powered recipe extraction using langfun - compatibility module."""
+"""AI-powered recipe extraction using ScrapeGraphAI - compatibility module."""
 
-# Import the new simplified implementation
+# Import the new ScrapeGraphAI implementation
 from .bridge import RecipeExtractor, RecipeExtractionResult
 
 # Re-export for backward compatibility

@@ -1,4 +1,4 @@
-"""Compatibility layer to bridge old and new langfun extraction APIs."""
+"""Compatibility layer for recipe extraction APIs."""
 
 import logging
 from typing import Optional, List, Dict, Any
@@ -8,23 +8,6 @@ from .simple_extractor import SimpleRecipeExtractor
 from .models import RecipeExtraction
 
 logger = logging.getLogger("app.ai.bridge")
-
-
-def _clean_pyglove_dict(data) -> Any:
-    """Clean PyGlove dictionary by removing _type fields and converting nested objects."""
-    if isinstance(data, dict):
-        # Remove _type field and recursively clean nested objects
-        cleaned = {}
-        for key, value in data.items():
-            if key != '_type':  # Skip PyGlove type information
-                cleaned[key] = _clean_pyglove_dict(value)
-        return cleaned
-    elif isinstance(data, list):
-        # Recursively clean list items
-        return [_clean_pyglove_dict(item) for item in data]
-    else:
-        # Return primitive values as-is
-        return data
 
 
 class RecipeExtractionResult:
@@ -41,11 +24,11 @@ class RecipeExtractionResult:
 
 
 def recipe_extraction_to_dict(recipe: RecipeExtraction, source_url: str) -> Dict[str, Any]:
-    """Convert RecipeExtraction to dictionary format using PyGlove's to_json() method."""
-    # Use PyGlove's built-in to_json() method and clean up the result
-    recipe_dict = _clean_pyglove_dict(recipe.to_json())
+    """Convert RecipeExtraction to dictionary format using Pydantic's model_dump method."""
+    # Use Pydantic's model_dump() method to convert to dictionary
+    recipe_dict = recipe.model_dump()
     
-    # Add source_url which isn't part of the PyGlove model
+    # Ensure source_url is set
     recipe_dict["source_url"] = source_url
     
     return recipe_dict
@@ -63,21 +46,21 @@ class RecipeExtractor:
         self.api_key = api_key
         self._extractor = SimpleRecipeExtractor(api_key=api_key)
         
-        logger.info("RecipeExtractor initialized with simplified langfun backend")
+        logger.info("RecipeExtractor initialized with ScrapeGraphAI backend")
 
     async def extract_recipe(
         self, content: str, source_url: str, images: Optional[List[dict]] = None
     ) -> RecipeExtractionResult:
         """
-        Extract recipe with compatibility wrapper - simplified without image processing.
+        Extract recipe with compatibility wrapper.
         
-        Maintains the same interface as the old extractor but uses the new simplified backend.
+        Maintains the same interface as the old extractor but uses the new ScrapeGraphAI backend.
         Images parameter is ignored in the simplified version.
         """
         try:
-            logger.info(f"Extracting recipe from {source_url} using simplified langfun")
+            logger.info(f"Extracting recipe from {source_url} using ScrapeGraphAI")
             
-            # Use the new simplified extractor (ignore images parameter)
+            # Use the new ScrapeGraphAI extractor (ignore images parameter)
             recipe_extraction = await self._extractor.extract_recipe(content, source_url)
             
             # Convert to expected dictionary format
@@ -89,9 +72,9 @@ class RecipeExtractor:
                 error=None,
                 source_url=source_url,
                 extraction_metadata={
-                    "method": "simplified_langfun",
+                    "method": "scrapegraphai",
                     "content_length": len(content),
-                    "model": "gpt-4o",
+                    "model": "gpt-4o-mini",
                     "images_analyzed": 0,  # Always 0 in simplified version
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }

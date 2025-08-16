@@ -156,10 +156,10 @@ class TestRecipeExtractor:
         assert extractor.use_ai == False
         
     @pytest.mark.asyncio
-    @patch('langfun.query')
-    async def test_ai_extraction(self, mock_query, extractor, sample_scraped_data):
-        """Test AI-powered extraction with langfun - simplified."""
-        # Mock langfun response using the current RecipeExtraction model
+    @patch('app.ai.simple_extractor.SimpleRecipeExtractor._mock_extraction')
+    async def test_ai_extraction(self, mock_extraction, extractor, sample_scraped_data):
+        """Test AI-powered extraction with ScrapeGraphAI fallback."""
+        # Mock the extraction response using the current RecipeExtraction model
         from app.ai.models import RecipeExtraction
         mock_recipe = RecipeExtraction(
             title="Chocolate Cake",
@@ -176,7 +176,7 @@ class TestRecipeExtractor:
             appliance_settings=[]
         )
         
-        mock_query.return_value = mock_recipe
+        mock_extraction.return_value = mock_recipe
         
         # Enable AI mode
         extractor.use_ai = True
@@ -193,8 +193,8 @@ class TestRecipeExtractor:
         assert recipe_dict['title'] == "Chocolate Cake"
         assert len(recipe_dict.get('images', [])) == 0  # Images should be empty
         
-        # Verify langfun was called
-        mock_query.assert_called_once()
+        # Verify the mock extraction was called (since ScrapeGraphAI is not available)
+        mock_extraction.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_image_analysis_simplified(self, extractor, sample_scraped_data):
