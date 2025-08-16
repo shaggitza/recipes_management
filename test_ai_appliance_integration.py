@@ -124,9 +124,9 @@ async def test_ai_appliance_settings_extraction():
         traceback.print_exc()
         return False
 
-async def test_direct_pyglove_model():
-    """Test PyGlove models directly to ensure they work."""
-    print("\n🧪 Testing PyGlove models directly...")
+async def test_direct_pydantic_model():
+    """Test Pydantic models directly to ensure they work."""
+    print("\n🧪 Testing Pydantic models directly...")
     
     try:
         # Test creating appliance settings directly
@@ -149,7 +149,7 @@ async def test_direct_pyglove_model():
             appliance_settings=[gas_setting, oven_setting]
         )
         
-        print(f"   ✅ PyGlove models work correctly")
+        print(f"   ✅ Pydantic models work correctly")
         print(f"   📝 Recipe title: {recipe.title}")
         print(f"   🏠 Appliance settings: {len(recipe.appliance_settings)}")
         
@@ -159,7 +159,7 @@ async def test_direct_pyglove_model():
         return True
         
     except Exception as e:
-        print(f"   ❌ PyGlove model test failed: {e}")
+        print(f"   ❌ Pydantic model test failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -274,8 +274,8 @@ async def main():
     print("🚀 Starting AI appliance settings integration tests...")
     print("=" * 60)
     
-    # Test PyGlove models directly
-    pyglove_success = await test_direct_pyglove_model()
+    # Test Pydantic models directly
+    pydantic_success = await test_direct_pydantic_model()
     
     # Test bridge conversion
     bridge_success = await test_bridge_conversion()
@@ -288,12 +288,12 @@ async def main():
     
     print("\n" + "=" * 60)
     print("📊 Test Summary:")
-    print(f"   🧪 PyGlove Models: {'✅ Pass' if pyglove_success else '❌ Fail'}")
+    print(f"   🧪 Pydantic Models: {'✅ Pass' if pydantic_success else '❌ Fail'}")
     print(f"   🌉 Bridge Conversion: {'✅ Pass' if bridge_success else '❌ Fail'}")
     print(f"   🔄 Mock AI Flow: {'✅ Pass' if mock_success else '❌ Fail'}")
     print(f"   🤖 AI Extraction: {'✅ Pass' if ai_success else '❌ Fail (or no API key)'}")
     
-    if pyglove_success and bridge_success and mock_success:
+    if pydantic_success and bridge_success and mock_success:
         if ai_success:
             print(f"\n🎉 All tests passed! AI appliance settings integration is working correctly.")
             return 0

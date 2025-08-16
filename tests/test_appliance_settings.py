@@ -217,11 +217,11 @@ class TestRecipeWithApplianceSettings:
         assert recipe_data.appliance_settings == []
 
 
-class TestPyGloveApplianceSettings:
-    """Test PyGlove appliance settings functionality."""
+class TestPydanticApplianceSettings:
+    """Test Pydantic appliance settings functionality."""
 
-    def test_pyglove_gas_burner_settings(self):
-        """Test PyGlove gas burner settings."""
+    def test_pydantic_gas_burner_settings(self):
+        """Test Pydantic gas burner settings."""
         settings = AIGasBurnerSettings(
             flame_level="high",
             duration_minutes=5,
@@ -235,8 +235,8 @@ class TestPyGloveApplianceSettings:
         assert len(settings.utensils) == 1
         assert settings.utensils[0].type == "wok"
 
-    def test_pyglove_airfryer_settings(self):
-        """Test PyGlove airfryer settings."""
+    def test_pydantic_airfryer_settings(self):
+        """Test Pydantic airfryer settings."""
         settings = AIAirfryerSettings(
             temperature_celsius=200,
             duration_minutes=10,
