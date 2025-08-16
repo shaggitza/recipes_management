@@ -10,7 +10,7 @@ from typing import Optional
 from .models import RecipeExtraction, Ingredient
 
 
-def extract_recipe_example():
+async def extract_recipe_example():
     """Example of ScrapeGraphAI crawler usage for recipe extraction."""
     
     # Example URL (this would be a real recipe URL)
@@ -46,8 +46,8 @@ def extract_recipe_example():
             config=graph_config
         )
         
-        # Execute the crawling and extraction
-        result = smart_scraper_graph.run()
+        # Execute the crawling and extraction asynchronously  
+        result = await smart_scraper_graph.run_safe_async()
         
         if isinstance(result, dict):
             recipe = RecipeExtraction(**result)
@@ -110,4 +110,5 @@ def extract_recipe_example():
 
 
 if __name__ == "__main__":
-    extract_recipe_example()
+    import asyncio
+    asyncio.run(extract_recipe_example())

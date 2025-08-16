@@ -57,8 +57,8 @@ class SimpleRecipeExtractor:
                 config=graph_config
             )
             
-            # Execute the crawling and extraction
-            result = smart_scraper_graph.run()
+            # Execute the crawling and extraction asynchronously
+            result = await smart_scraper_graph.run_safe_async()
             
             # Ensure source_url is set
             if isinstance(result, dict):
