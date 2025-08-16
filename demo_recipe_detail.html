@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <title>Classic Pasta Carbonara - Recipe Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Demo banner */
+        .demo-banner {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 1rem;
+            text-align: center;
+            color: #2d3436;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Recipe Detail Page Demo -->
+    <div id="recipeDetailPage" class="recipe-detail-page">
+        <div class="demo-banner">
+            <i class="fas fa-info-circle"></i>
+            Demo - Improved Desktop Recipe Layout: Side-by-Side Ingredients & Instructions for Compact Viewing
+        </div>
+        
+        <div class="recipe-detail-header">
+            <div class="container">
+                <button class="btn-back" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> Back to Recipes
+                </button>
+                <div class="detail-actions">
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recipe-detail-container">
+            <h1 class="recipe-detail-title">Classic Pasta Carbonara</h1>
+            
+            <div class="recipe-detail">
+                <!-- Main Content (Left Column on Desktop) -->
+                <div class="recipe-main-content">
+                    <p class="recipe-description">A traditional Italian pasta dish with eggs, cheese, and pancetta. This authentic recipe delivers creamy texture without cream, using the traditional technique of combining hot pasta with tempered eggs and cheese.</p>
+                    
+                    <!-- Mobile meta (hidden on desktop) -->
+                    <div class="detail-meta mobile-only">
+                        <div class="detail-meta-item">
+                            <span class="detail-meta-value">15</span>
+                            <span class="detail-meta-label">Prep (min)</span>
+                        </div>
+                        <div class="detail-meta-item">
+                            <span class="detail-meta-value">20</span>
+                            <span class="detail-meta-label">Cook (min)</span>
+                        </div>
+                        <div class="detail-meta-item">
+                            <span class="detail-meta-value">4</span>
+                            <span class="detail-meta-label">Servings</span>
+                        </div>
+                        <div class="detail-meta-item">
+                            <span class="detail-meta-value">Medium</span>
+                            <span class="detail-meta-label">Difficulty</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop two-column layout for ingredients and instructions -->
+                    <div class="desktop-only">
+                        <div class="recipe-content-columns">
+                            <div class="detail-section ingredients-column">
+                                <h3><i class="fas fa-list"></i> Ingredients</h3>
+                                <div class="ingredients-container">
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Spaghetti</div>
+                                        <div class="ingredient-amount">400</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Pancetta</div>
+                                        <div class="ingredient-amount">150</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Large Eggs</div>
+                                        <div class="ingredient-amount">3</div>
+                                        <div class="ingredient-unit">pieces</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Parmesan Cheese (grated)</div>
+                                        <div class="ingredient-amount">100</div>
+                                        <div class="ingredient-unit">g</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Black Pepper (freshly ground)</div>
+                                        <div class="ingredient-amount">1</div>
+                                        <div class="ingredient-unit">tsp</div>
+                                    </div>
+                                    <div class="ingredients-grid">
+                                        <div class="ingredient-name">Salt</div>
+                                        <div class="ingredient-amount">to taste</div>
+                                        <div class="ingredient-unit"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="detail-section instructions-column">
+                                <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                                <div class="instructions-container">
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">1</div>
+                                        <div class="instruction-text">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">2</div>
+                                        <div class="instruction-text">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy, about 5-7 minutes.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">3</div>
+                                        <div class="instruction-text">In a bowl, whisk together eggs, grated parmesan, and freshly ground black pepper. Set aside.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">4</div>
+                                        <div class="instruction-text">Add the drained hot pasta to the pan with pancetta. Remove from heat immediately.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">5</div>
+                                        <div class="instruction-text">Quickly stir in the egg mixture, tossing vigorously with tongs to create a creamy sauce. Add pasta water gradually if needed.</div>
+                                    </div>
+                                    <div class="instruction-item">
+                                        <div class="instruction-number">6</div>
+                                        <div class="instruction-text">Serve immediately with extra parmesan and black pepper. Enjoy your authentic Carbonara!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section desktop-appliances">
+                            <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                            <div class="appliance-settings-display">
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> Gas Burner
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #e74c3c">
+                                                <i class="fas fa-fire"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Flame Level</div>
+                                                <div class="setting-box-value">Medium-High</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">5-7 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> General Stove
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #f39c12">
+                                                <i class="fas fa-thermometer-half"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Heat Level</div>
+                                                <div class="setting-box-value">Medium</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">10-12 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile vertical layout -->
+                    <div class="mobile-only">
+                        <!-- Ingredients Section -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-list"></i> Ingredients</h3>
+                            <div class="ingredients-container">
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Spaghetti</div>
+                                    <div class="ingredient-amount">400</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Pancetta</div>
+                                    <div class="ingredient-amount">150</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Large Eggs</div>
+                                    <div class="ingredient-amount">3</div>
+                                    <div class="ingredient-unit">pieces</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Parmesan Cheese (grated)</div>
+                                    <div class="ingredient-amount">100</div>
+                                    <div class="ingredient-unit">g</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Black Pepper (freshly ground)</div>
+                                    <div class="ingredient-amount">1</div>
+                                    <div class="ingredient-unit">tsp</div>
+                                </div>
+                                <div class="ingredients-grid">
+                                    <div class="ingredient-name">Salt</div>
+                                    <div class="ingredient-amount">to taste</div>
+                                    <div class="ingredient-unit"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instructions Section -->
+                        <div class="detail-section">
+                            <h3><i class="fas fa-tasks"></i> Instructions</h3>
+                            <div class="instructions-container">
+                                <div class="instruction-item">
+                                    <div class="instruction-number">1</div>
+                                    <div class="instruction-text">Cook spaghetti in salted boiling water according to package instructions until al dente. Reserve 1 cup of pasta water before draining.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">2</div>
+                                    <div class="instruction-text">Meanwhile, cut pancetta into small cubes and cook in a large pan over medium heat until crispy, about 5-7 minutes.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">3</div>
+                                    <div class="instruction-text">In a bowl, whisk together eggs, grated parmesan, and freshly ground black pepper. Set aside.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">4</div>
+                                    <div class="instruction-text">Add the drained hot pasta to the pan with pancetta. Remove from heat immediately.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">5</div>
+                                    <div class="instruction-text">Quickly stir in the egg mixture, tossing vigorously with tongs to create a creamy sauce. Add pasta water gradually if needed.</div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">6</div>
+                                    <div class="instruction-text">Serve immediately with extra parmesan and black pepper. Enjoy your authentic Carbonara!</div>
+                                </div>
+                            </div>
+                        
+                    <!-- Mobile-only sections -->
+                    <div class="mobile-only">
+                        
+                        <div class="detail-section">
+                            <h3><i class="fas fa-tools"></i> Appliance Settings</h3>
+                            <div class="appliance-settings-display">
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> Gas Burner
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #e74c3c">
+                                                <i class="fas fa-fire"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Flame Level</div>
+                                                <div class="setting-box-value">Medium-High</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">5-7 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="appliance-setting-detail">
+                                    <div class="appliance-setting-title">
+                                        <i class="fas fa-fire"></i> General Stove
+                                    </div>
+                                    <div class="appliance-setting-boxes">
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #f39c12">
+                                                <i class="fas fa-thermometer-half"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Heat Level</div>
+                                                <div class="setting-box-value">Medium</div>
+                                            </div>
+                                        </div>
+                                        <div class="setting-box">
+                                            <div class="setting-box-icon" style="color: #9b59b6">
+                                                <i class="fas fa-clock"></i>
+                                            </div>
+                                            <div class="setting-box-content">
+                                                <div class="setting-box-label">Duration</div>
+                                                <div class="setting-box-value">10-12 min</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h3><i class="fas fa-tags"></i> Tags</h3>
+                            <div class="detail-tags">
+                                <span class="tag">pasta</span>
+                                <span class="tag">dinner</span>
+                                <span class="tag">italian</span>
+                                <span class="tag">quick</span>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3><i class="fas fa-clock"></i> Meal Times</h3>
+                            <div class="detail-tags">
+                                <span class="tag meal-time-tag">Lunch</span>
+                                <span class="tag meal-time-tag">Dinner</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar (Right Column on Desktop) -->
+                <div class="recipe-sidebar desktop-only">
+                    <!-- Recipe meta for desktop -->
+                    <div class="recipe-meta-desktop">
+                        <div class="recipe-meta-card">
+                            <span class="recipe-meta-value">15</span>
+                            <span class="recipe-meta-label">Prep (min)</span>
+                        </div>
+                        <div class="recipe-meta-card">
+                            <span class="recipe-meta-value">20</span>
+                            <span class="recipe-meta-label">Cook (min)</span>
+                        </div>
+                        <div class="recipe-meta-card">
+                            <span class="recipe-meta-value">4</span>
+                            <span class="recipe-meta-label">Servings</span>
+                        </div>
+                        <div class="recipe-meta-card">
+                            <span class="recipe-meta-value">Medium</span>
+                            <span class="recipe-meta-label">Difficulty</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h4><i class="fas fa-tools"></i> Appliances</h4>
+                        <div class="sidebar-appliances">
+                            <div class="sidebar-appliance">
+                                <div class="sidebar-appliance-header">
+                                    <i class="fas fa-fire"></i>
+                                    <span>Gas Burner</span>
+                                </div>
+                                <div class="sidebar-appliance-details">
+                                    <span>Flame Level: Medium-High</span>
+                                    <span>Duration: 5-7 min</span>
+                                </div>
+                            </div>
+                            <div class="sidebar-appliance">
+                                <div class="sidebar-appliance-header">
+                                    <i class="fas fa-fire"></i>
+                                    <span>General Stove</span>
+                                </div>
+                                <div class="sidebar-appliance-details">
+                                    <span>Heat Level: Medium</span>
+                                    <span>Duration: 10-12 min</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h4><i class="fas fa-tags"></i> Tags</h4>
+                        <div class="sidebar-tags">
+                            <span class="tag">pasta</span>
+                            <span class="tag">dinner</span>
+                            <span class="tag">italian</span>
+                            <span class="tag">quick</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <h4><i class="fas fa-clock"></i> Meal Times</h4>
+                        <div class="sidebar-tags">
+                            <span class="tag meal-time-tag">Lunch</span>
+                            <span class="tag meal-time-tag">Dinner</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple demo interaction
+        document.addEventListener('DOMContentLoaded', function() {
+            // Demo button interactions
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                if (!btn.classList.contains('btn-back')) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const text = btn.textContent.trim();
+                        alert(`"${text}" functionality would work here in the full application!`);
+                    });
+                }
+            });
+
+            console.log('Recipe Detail Demo Loaded - Desktop Layout Complete!');
+        });
+    </script>
+</body>
+</html>
