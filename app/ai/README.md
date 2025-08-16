@@ -1,23 +1,26 @@
 # AI Recipe Import Module
 
-This module provides AI-powered recipe extraction from web pages using langfun, implementing the requested functionality to scrape recipe websites and extract structured recipe data with advanced language model capabilities.
+This module provides AI-powered recipe extraction from web pages using ScrapeGraphAI, implementing intelligent recipe parsing with better Pydantic model integration and modern AI capabilities.
 
 ## Features
 
 - **Web Scraping**: Uses requests/BeautifulSoup (with Playwright ready for future enhancement)
-- **AI Extraction**: Full langfun integration with OpenAI GPT models for intelligent recipe parsing
+- **AI Extraction**: ScrapeGraphAI integration with OpenAI GPT models for intelligent recipe parsing
 - **Data Transformation**: Converts extracted data to application Recipe models
 - **Retry Logic**: Robust error handling with configurable retry policies
 - **Modular Design**: Clean separation of concerns across multiple modules
+- **Pydantic Models**: Pure Pydantic models for better type safety and validation
 
 ## Architecture
 
 ```
 app/ai/
 ├── __init__.py          # Module initialization
-├── models.py           # PyGlove-style models for extracted data
+├── models.py           # Pydantic models for extracted data
 ├── scraper.py          # Web scraping with requests/BeautifulSoup
-├── extractor.py        # AI extraction with full langfun integration
+├── extractor.py        # AI extraction with ScrapeGraphAI integration
+├── simple_extractor.py # Core ScrapeGraphAI extraction logic
+├── bridge.py           # Compatibility layer for existing code
 ├── transformer.py      # Data transformation to Recipe models
 └── importer.py         # Import service with retry logic
 
@@ -152,14 +155,14 @@ Additional configuration options:
 
 ## AI Integration
 
-The system now uses langfun with OpenAI GPT models for intelligent recipe extraction:
+The system now uses ScrapeGraphAI with OpenAI GPT models for intelligent recipe extraction:
 
 ### Automatic Translation
 - Recipes in Romanian, Spanish, French, or other languages are automatically translated to English
 - Preserves original cooking techniques and cultural context
 
 ### Structured Extraction  
-- Uses langfun's JSON output formatting for consistent data structure
+- Uses ScrapeGraphAI's JSON output formatting for consistent data structure
 - Intelligent parsing of ingredients with amounts, units, and names
 - Smart estimation of missing cooking times and servings
 
@@ -178,21 +181,26 @@ The system includes comprehensive error handling:
 
 ## Future Enhancements
 
-### Advanced Langfun Features
-The current implementation provides a foundation for advanced langfun capabilities:
+### Advanced ScrapeGraphAI Features
+The current implementation provides a foundation for advanced ScrapeGraphAI capabilities:
 
 ```python
-# In extractor.py - ready for advanced langfun features
+# In simple_extractor.py - ready for advanced ScrapeGraphAI features
 async def _extract_with_advanced_ai(self, content: str, source_url: str):
     """Advanced AI extraction with multi-model support."""
     
     # Support for different model backends
-    with lf.use_init_args(lf.llm.VertexAI(model='gemini-pro')):
-        result = await self._extract_with_ai(content, source_url)
+    graph_config = {
+        "llm": {
+            "model": "gpt-4",  # or "claude-3", "gemini-pro"
+            "api_key": self.api_key,
+        },
+    }
     
     # Chain of thought reasoning for complex recipes
-    with lf.use_init_args(lf.llm.OpenAI(temperature=0.0)):
-        refined_result = await self._refine_extraction(result)
+    prompt = "Analyze this recipe step by step and extract detailed information..."
+    
+    return await self._extract_with_scrapegraphai(content, prompt, graph_config)
     
     return refined_result
 ```
@@ -244,7 +252,7 @@ The system uses fallback parsing for other recipe websites.
 - `playwright`: Ready for JavaScript-heavy sites
 - `pydantic`: Data validation and models
 - `fastapi`: API framework
-- `langfun`: AI integration with language models ✅ **IMPLEMENTED**
+- `scrapegraphai`: AI-powered web scraping with language models ✅ **IMPLEMENTED**
 - `openai`: OpenAI API client for GPT models ✅ **IMPLEMENTED**
 
 ## Troubleshooting
@@ -255,9 +263,9 @@ The system uses fallback parsing for other recipe websites.
    - Solution: Set `OPENAI_API_KEY` environment variable with valid key
    - Fallback: System automatically uses rule-based extraction
 
-2. **Langfun Import Error**: Package not installed
-   - Solution: `pip install langfun openai`
-   - Fallback: System disables AI extraction and uses rule-based parsing
+2. **ScrapeGraphAI Import Error**: Package not installed
+   - Solution: `pip install scrapegraphai openai`
+   - Fallback: System disables AI extraction and uses mock implementation
 
 3. **Scraping Fails**: Website may block automated requests
    - Solution: Add delays, rotate user agents, or use Playwright

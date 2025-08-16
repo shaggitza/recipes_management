@@ -1,18 +1,18 @@
-"""Simplified langfun models for structured recipe data extraction."""
+"""Pydantic models for structured recipe data extraction."""
 
 from typing import List, Optional, Literal, Union
-import pyglove as pg
+from pydantic import BaseModel
 
 
-class Ingredient(pg.Object):
+class Ingredient(BaseModel):
     """Recipe ingredient with standardized structure."""
 
     name: str
-    amount: str | None = None
+    amount: Optional[str] = None
     unit: Optional[str] = None
 
 
-class ExtractedImage(pg.Object):
+class ExtractedImage(BaseModel):
     """Simplified extracted image - kept for compatibility but not used."""
 
     url: str
@@ -22,7 +22,7 @@ class ExtractedImage(pg.Object):
     is_primary: bool = False  # Default to False since not used
 
 
-class Utensil(pg.Object):
+class Utensil(BaseModel):
     """Utensil information for appliances that require specific cookware."""
     
     type: str  # e.g., "pan", "tray", "pot"
@@ -31,7 +31,7 @@ class Utensil(pg.Object):
     notes: Optional[str] = None  # additional notes
 
 
-class GasBurnerSettings(pg.Object):
+class GasBurnerSettings(BaseModel):
     """Settings for gas burner cooking."""
     
     appliance_type: Literal["gas_burner"] = "gas_burner"
@@ -41,7 +41,7 @@ class GasBurnerSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class AirfryerSettings(pg.Object):
+class AirfryerSettings(BaseModel):
     """Settings for airfryer cooking."""
     
     appliance_type: Literal["airfryer"] = "airfryer"
@@ -53,7 +53,7 @@ class AirfryerSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class ElectricGrillSettings(pg.Object):
+class ElectricGrillSettings(BaseModel):
     """Settings for electric grill with temperature control."""
     
     appliance_type: Literal["electric_grill"] = "electric_grill"
@@ -64,7 +64,7 @@ class ElectricGrillSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class ElectricStoveSettings(pg.Object):
+class ElectricStoveSettings(BaseModel):
     """Settings for electric stove without temperature control."""
     
     appliance_type: Literal["electric_stove"] = "electric_stove"
@@ -74,7 +74,7 @@ class ElectricStoveSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class InductionStoveSettings(pg.Object):
+class InductionStoveSettings(BaseModel):
     """Settings for electric induction stove."""
     
     appliance_type: Literal["induction_stove"] = "induction_stove"
@@ -85,7 +85,7 @@ class InductionStoveSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class OvenSettings(pg.Object):
+class OvenSettings(BaseModel):
     """Settings for kitchen oven."""
     
     appliance_type: Literal["oven"] = "oven"
@@ -98,7 +98,7 @@ class OvenSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class CharcoalGrillSettings(pg.Object):
+class CharcoalGrillSettings(BaseModel):
     """Settings for charcoal grill."""
     
     appliance_type: Literal["charcoal_grill"] = "charcoal_grill"
@@ -109,7 +109,7 @@ class CharcoalGrillSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class GeneralStoveSettings(pg.Object):
+class GeneralStoveSettings(BaseModel):
     """Settings for general stove (when specific type not known)."""
     
     appliance_type: Literal["stove"] = "stove"
@@ -119,8 +119,8 @@ class GeneralStoveSettings(pg.Object):
     notes: Optional[str] = None
 
 
-class RecipeExtraction(pg.Object):
-    """Simplified recipe extraction model using pyglove."""
+class RecipeExtraction(BaseModel):
+    """Recipe extraction model using Pydantic for better ScrapeGraphAI integration."""
 
     title: str
     description: Optional[str] = None
@@ -136,7 +136,7 @@ class RecipeExtraction(pg.Object):
     ] = []  # Default to empty list
     images: List[ExtractedImage] = []  # Always empty in simplified version
     source_url: Optional[str] = None
-    # Properly typed appliance settings list with Union types for langfun
+    # Appliance settings using Union for ScrapeGraphAI compatibility
     appliance_settings: List[Union[
         GasBurnerSettings,
         AirfryerSettings,
@@ -149,27 +149,12 @@ class RecipeExtraction(pg.Object):
     ]] = []  # Default to empty list
 
 
-# Helper function to create appliance settings choice for PyGlove
-def create_appliance_settings_choice():
-    """Create a PyGlove oneof choice for appliance settings."""
-    return pg.oneof([
-        GasBurnerSettings,
-        AirfryerSettings,
-        ElectricGrillSettings,
-        ElectricStoveSettings,
-        InductionStoveSettings,
-        OvenSettings,
-        CharcoalGrillSettings,
-        GeneralStoveSettings
-    ])
-
-
 # Export all appliance setting types for easy access
 __all__ = [
     'Ingredient', 'ExtractedImage', 'RecipeExtraction', 'ExtractedRecipe',
     'Utensil', 'GasBurnerSettings', 'AirfryerSettings', 'ElectricGrillSettings',
     'ElectricStoveSettings', 'InductionStoveSettings', 'OvenSettings',
-    'CharcoalGrillSettings', 'GeneralStoveSettings', 'create_appliance_settings_choice'
+    'CharcoalGrillSettings', 'GeneralStoveSettings'
 ]
 
 

@@ -1,66 +1,20 @@
 """
-Example showing the simplified langfun usage similar to your example.
+Example showing ScrapeGraphAI crawler usage for recipe extraction.
 
-This demonstrates how to use langfun for recipe extraction in a much simpler way.
+This demonstrates how to use ScrapeGraphAI's crawler for direct URL-to-model extraction.
 """
 
-import langfun as lf
-import pyglove as pg
 import os
 from typing import Optional
 
-# Simple models similar to your example
-class Ingredient(pg.Object):
-    name: str
-    amount: str
-    unit: Optional[str] = None
+from .models import RecipeExtraction, Ingredient
 
-class Recipe(pg.Object):
-    title: str
-    description: Optional[str] = None
-    ingredients: list[Ingredient] = []
-    instructions: list[str] = []
-    prep_time: Optional[int] = None
-    cook_time: Optional[int] = None
-    servings: Optional[int] = None
-    difficulty: Optional[str] = None
-    tags: list[str] = []
 
-def extract_recipe_example():
-    """Example of simple langfun usage for recipe extraction."""
+async def extract_recipe_example():
+    """Example of ScrapeGraphAI crawler usage for recipe extraction."""
     
-    # Sample web content (this would come from scraping)
-    content = """
-    Title: Classic Chocolate Chip Cookies
-    
-    A delicious recipe for soft and chewy chocolate chip cookies that everyone will love!
-    
-    Ingredients:
-    - 2 1/4 cups all-purpose flour
-    - 1 tsp baking soda
-    - 1 tsp salt
-    - 1 cup butter, softened
-    - 3/4 cup granulated sugar
-    - 3/4 cup brown sugar
-    - 2 large eggs
-    - 2 tsp vanilla extract
-    - 2 cups chocolate chips
-    
-    Instructions:
-    1. Preheat oven to 375°F
-    2. Mix flour, baking soda, and salt in a bowl
-    3. Cream butter and sugars until light and fluffy
-    4. Beat in eggs and vanilla
-    5. Gradually mix in flour mixture
-    6. Stir in chocolate chips
-    7. Drop spoonfuls on baking sheet
-    8. Bake for 9-11 minutes
-    
-    Prep time: 15 minutes
-    Cook time: 10 minutes
-    Serves: 24 cookies
-    Difficulty: Easy
-    """
+    # Example URL (this would be a real recipe URL)
+    example_url = "https://example.com/chocolate-chip-cookies"
     
     # Get API key
     api_key = os.environ.get('OPENAI_API_KEY')
@@ -68,12 +22,73 @@ def extract_recipe_example():
         print("Please set OPENAI_API_KEY environment variable")
         return
     
-    # Simple langfun query - just like your example!
-    recipe = lf.query(
-        f'Extract recipe information from this content: {content}',
-        Recipe,
-        lm=lf.llms.Gpt4o(api_key=api_key),
-    )
+    try:
+        # Try to import ScrapeGraphAI
+        from scrapegraphai.graphs import SmartScraperGraph
+        
+        # Create ScrapeGraphAI configuration
+        graph_config = {
+            "llm": {
+                "model": "gpt-4o-mini",
+                "api_key": api_key,
+            },
+        }
+        
+        # Create prompt for recipe extraction
+        prompt = """Extract comprehensive recipe information from this web page. 
+        Return the data structured according to the RecipeExtraction schema with title, ingredients, instructions, etc."""
+        
+        # Use ScrapeGraphAI's SmartScraperGraph to crawl and extract directly from URL
+        smart_scraper_graph = SmartScraperGraph(
+            prompt=prompt,
+            source=example_url,  # Direct URL crawling
+            schema=RecipeExtraction,
+            config=graph_config
+        )
+        
+        # Execute the crawling and extraction asynchronously  
+        result = await smart_scraper_graph.run_safe_async()
+        
+        if isinstance(result, dict):
+            recipe = RecipeExtraction(**result)
+        else:
+            recipe = result
+        
+    except ImportError:
+        print("ScrapeGraphAI not available, using mock data")
+        # Fallback mock recipe for demonstration
+        recipe = RecipeExtraction(
+            title="Classic Chocolate Chip Cookies",
+            description="A delicious recipe for soft and chewy chocolate chip cookies that everyone will love!",
+            ingredients=[
+                Ingredient(name="all-purpose flour", amount="2 1/4", unit="cups"),
+                Ingredient(name="baking soda", amount="1", unit="tsp"),
+                Ingredient(name="salt", amount="1", unit="tsp"),
+                Ingredient(name="butter, softened", amount="1", unit="cup"),
+                Ingredient(name="granulated sugar", amount="3/4", unit="cup"),
+                Ingredient(name="brown sugar", amount="3/4", unit="cup"),
+                Ingredient(name="large eggs", amount="2"),
+                Ingredient(name="vanilla extract", amount="2", unit="tsp"),
+                Ingredient(name="chocolate chips", amount="2", unit="cups"),
+            ],
+            instructions=[
+                "Preheat oven to 375°F",
+                "Mix flour, baking soda, and salt in a bowl",
+                "Cream butter and sugars until light and fluffy",
+                "Beat in eggs and vanilla",
+                "Gradually mix in flour mixture",
+                "Stir in chocolate chips",
+                "Drop spoonfuls on baking sheet",
+                "Bake for 9-11 minutes",
+            ],
+            prep_time=15,
+            cook_time=10,
+            servings=24,
+            difficulty="easy",
+            tags=["dessert", "cookies", "american"],
+            meal_times=["dessert"],
+            source_url=example_url,
+        )
     
     print("Extracted Recipe:")
     print(f"Title: {recipe.title}")
@@ -93,5 +108,7 @@ def extract_recipe_example():
     
     return recipe
 
+
 if __name__ == "__main__":
-    extract_recipe_example()
+    import asyncio
+    asyncio.run(extract_recipe_example())

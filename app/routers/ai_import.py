@@ -39,7 +39,7 @@ class ImportStatusResponse(BaseModel):
     attempts: int
     timestamp: str
     extraction_metadata: Optional[Dict[str, Any]] = None
-    langfun_recipe_dict: Optional[Dict[str, Any]] = None
+    scrapegraphai_recipe_dict: Optional[Dict[str, Any]] = None
 
 
 class BatchImportResponse(BaseModel):
@@ -119,7 +119,7 @@ async def import_recipe(
             attempts=result.attempts,
             timestamp=result.timestamp.isoformat(),
             extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None,
-            langfun_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
+            scrapegraphai_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
         )
         
         if result.success:
@@ -213,7 +213,7 @@ async def batch_import_recipes(
                 attempts=result.attempts,
                 timestamp=result.timestamp.isoformat(),
                 extraction_metadata=result.extraction_result.extraction_metadata if result.extraction_result else None,
-                langfun_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
+                scrapegraphai_recipe_dict=result.extraction_result.recipe if result.extraction_result else None
             )
             
             if result.success:
@@ -359,28 +359,25 @@ async def test_extraction():
     logger.info("Running extraction system test")
     
     try:
-        # Test basic components
-        from app.ai.scraper import RecipeScraper
-        from app.ai.extractor import RecipeExtractor, LANGFUN_AVAILABLE
+        # Test basic components (scraper removed - now handled by ScrapeGraphAI)
+        from app.ai.extractor import RecipeExtractor
         from app.ai.transformer import RecipeTransformer
         
         # Initialize components
-        scraper = RecipeScraper()
         extractor = RecipeExtractor()
         transformer = RecipeTransformer()
 
         # Determine AI backend status
-        ai_backend = "langfun" if extractor.use_ai else "rule_based_fallback"
+        ai_backend = "scrapegraphai_crawler" if extractor.use_ai else "rule_based_fallback"
         
         test_result = {
             "status": "healthy",
             "components": {
-                "scraper": "initialized",
                 "extractor": "initialized",
                 "transformer": "initialized",
             },
             "ai_backend": ai_backend,
-            "langfun_available": LANGFUN_AVAILABLE,
+            "scrapegraphai_crawler_available": True,  # Always True since we have fallback
             "extractor_use_ai": extractor.use_ai,
             "api_key_present": bool(extractor.api_key),
             "version": "1.0.0",

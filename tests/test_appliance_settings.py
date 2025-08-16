@@ -10,8 +10,7 @@ from app.models.recipe import (
 )
 from app.ai.models import (
     RecipeExtraction, GasBurnerSettings as AIGasBurnerSettings,
-    AirfryerSettings as AIAirfryerSettings, Utensil as AIUtensil,
-    create_appliance_settings_choice
+    AirfryerSettings as AIAirfryerSettings, Utensil as AIUtensil
 )
 from app.ai.bridge import recipe_extraction_to_dict
 
@@ -32,8 +31,8 @@ class TestUtensilModel:
         assert utensil.material == "non-stick"
         assert utensil.notes == "Good for eggs"
 
-    def test_utensil_creation_pyglove(self):
-        """Test creating a utensil with PyGlove model."""
+    def test_utensil_creation_ai_model(self):
+        """Test creating a utensil with AI model."""
         utensil = AIUtensil(
             type="tray",
             size="large",
@@ -218,11 +217,11 @@ class TestRecipeWithApplianceSettings:
         assert recipe_data.appliance_settings == []
 
 
-class TestPyGloveApplianceSettings:
-    """Test PyGlove appliance settings functionality."""
+class TestPydanticApplianceSettings:
+    """Test Pydantic appliance settings functionality."""
 
-    def test_pyglove_gas_burner_settings(self):
-        """Test PyGlove gas burner settings."""
+    def test_pydantic_gas_burner_settings(self):
+        """Test Pydantic gas burner settings."""
         settings = AIGasBurnerSettings(
             flame_level="high",
             duration_minutes=5,
@@ -236,8 +235,8 @@ class TestPyGloveApplianceSettings:
         assert len(settings.utensils) == 1
         assert settings.utensils[0].type == "wok"
 
-    def test_pyglove_airfryer_settings(self):
-        """Test PyGlove airfryer settings."""
+    def test_pydantic_airfryer_settings(self):
+        """Test Pydantic airfryer settings."""
         settings = AIAirfryerSettings(
             temperature_celsius=200,
             duration_minutes=10,
@@ -273,14 +272,6 @@ class TestPyGloveApplianceSettings:
         assert recipe.title == "AI Extracted Recipe"
         assert len(recipe.appliance_settings) == 1
         assert recipe.appliance_settings[0].appliance_type == "gas_burner"
-
-    def test_create_appliance_settings_choice(self):
-        """Test the utility function for creating appliance settings choices."""
-        choice = create_appliance_settings_choice()
-        # The choice should be a PyGlove oneof object
-        assert hasattr(choice, 'candidates')
-        # Should have 8 different appliance types
-        assert len(choice.candidates) == 8
 
 
 class TestAIIntegration:

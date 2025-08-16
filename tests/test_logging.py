@@ -367,7 +367,7 @@ class TestAILogger:
         AILogger.log_extraction_start(
             logger,
             url="https://example.com/recipe",
-            method="langfun",
+            method="scrapegraphai",
             request_id="req-123"
         )
         
@@ -377,7 +377,7 @@ class TestAILogger:
         assert call_args[0][0] == "Starting recipe extraction"
         extra = call_args[1]["extra"]["extra_data"]
         assert extra["url"] == "https://example.com/recipe"
-        assert extra["extraction_method"] == "langfun"
+        assert extra["extraction_method"] == "scrapegraphai"
         assert extra["request_id"] == "req-123"
     
     def test_log_extraction_success(self):
@@ -387,7 +387,7 @@ class TestAILogger:
         AILogger.log_extraction_success(
             logger,
             url="https://example.com/recipe",
-            method="langfun",
+            method="scrapegraphai",
             duration=1500.0,
             recipe_id="recipe-123",
             images_found=3
@@ -399,7 +399,7 @@ class TestAILogger:
         assert call_args[0][0] == "Recipe extraction completed"
         extra = call_args[1]["extra"]["extra_data"]
         assert extra["url"] == "https://example.com/recipe"
-        assert extra["extraction_method"] == "langfun"
+        assert extra["extraction_method"] == "scrapegraphai"
         assert extra["duration_ms"] == 1500.0
         assert extra["success"] is True
         assert extra["recipe_id"] == "recipe-123"
