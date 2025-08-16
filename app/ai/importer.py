@@ -2,12 +2,11 @@
 
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
 from app.models.recipe import Recipe, RecipeCreate
 from app.repositories.recipe_repository import RecipeRepository
-from .scraper import RecipeScraper
 from .extractor import RecipeExtractor
 from .transformer import RecipeTransformer
 from .bridge import RecipeExtractionResult
@@ -62,7 +61,7 @@ class RecipeImporter:
         self.retry_delay = retry_delay
         self.timeout = timeout
         
-        self.scraper = RecipeScraper(timeout=timeout)
+        # Remove the separate scraper - ScrapeGraphAI handles this now
         self.extractor = RecipeExtractor(use_ai=True, api_key=openai_api_key)
         self.transformer = RecipeTransformer()
 
@@ -83,24 +82,8 @@ class RecipeImporter:
             try:
                 logger.info(f"Import attempt {attempt}/{self.max_retries} for {url}")
                 
-                # Step 1: Scrape the web page
-                scrape_result = await self._scrape_with_retry(url, attempt)
-                if not scrape_result:
-                    if attempt < self.max_retries:
-                        await asyncio.sleep(self.retry_delay * attempt)
-                        continue
-                    else:
-                        return ImportResult(
-                            success=False,
-                            error="Failed to scrape content from URL after all retries",
-                            url=url,
-                            attempts=attempt
-                        )
-                
-                scraped_content, images = scrape_result
-                
-                # Step 2: Extract recipe data using AI
-                extraction_result = await self._extract_with_retry(scraped_content, images, url, attempt)
+                # Step 1: Extract recipe data directly from URL using ScrapeGraphAI's crawler
+                extraction_result = await self._extract_with_retry(url, attempt)
                 if not extraction_result.success:
                     if attempt < self.max_retries:
                         await asyncio.sleep(self.retry_delay * attempt)
@@ -114,7 +97,7 @@ class RecipeImporter:
                             extraction_result=extraction_result
                         )
                 
-                # Step 3: Transform to Recipe model
+                # Step 2: Transform to Recipe model
                 recipe_create = await self._transform_with_retry(extraction_result.recipe, user_metadata, attempt)
                 if not recipe_create:
                     if attempt < self.max_retries:
@@ -129,7 +112,7 @@ class RecipeImporter:
                             extraction_result=extraction_result
                         )
                 
-                # Step 4: Save to database
+                # Step 3: Save to database
                 recipe = await self._save_with_retry(recipe_create, attempt)
                 if not recipe:
                     if attempt < self.max_retries:
@@ -174,31 +157,13 @@ class RecipeImporter:
             attempts=self.max_retries
         )
 
-    async def _scrape_with_retry(self, url: str, attempt: int) -> Optional[Tuple[str, List[dict]]]:
-        """Scrape content and images with error handling."""
-        try:
-            logger.debug(f"Scraping attempt {attempt}: {url}")
-            content, images = await self.scraper.scrape_and_extract(url)
-            if content and len(content.strip()) > 100:  # Minimum content length
-                return content, images
-            else:
-                error_msg = f"Scraped content too short or empty for {url}"
-                logger.warning(error_msg)
-                if attempt >= self.max_retries:
-                    raise ValueError(error_msg)
-                return None
-        except Exception as e:
-            error_msg = f"Scraping error on attempt {attempt}: {e}"
-            logger.error(error_msg)
-            if attempt >= self.max_retries:
-                raise RuntimeError(error_msg) from e
-            return None
+    # Scraping is now handled by ScrapeGraphAI's crawler - removed _scrape_with_retry method
 
-    async def _extract_with_retry(self, content: str, images: List[dict], url: str, attempt: int) -> RecipeExtractionResult:
-        """Extract recipe data with error handling."""
+    async def _extract_with_retry(self, url: str, attempt: int) -> RecipeExtractionResult:
+        """Extract recipe data directly from URL with error handling."""
         try:
             logger.debug(f"Extraction attempt {attempt} for {url}")
-            return await self.extractor.extract_recipe(content, url, images)
+            return await self.extractor.extract_recipe_from_url(url)
         except Exception as e:
             error_msg = f"Extraction error on attempt {attempt}: {e}"
             logger.error(error_msg)
@@ -354,8 +319,8 @@ class RecipeImporter:
 
     async def cleanup(self):
         """Clean up resources."""
-        if self.scraper and hasattr(self.scraper, 'close'):
-            self.scraper.close()
+        # No cleanup needed since scraper is now handled by ScrapeGraphAI
+        pass
 
     async def __aenter__(self):
         """Async context manager entry."""

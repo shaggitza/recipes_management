@@ -1,7 +1,7 @@
 """
-Example showing ScrapeGraphAI usage for recipe extraction.
+Example showing ScrapeGraphAI crawler usage for recipe extraction.
 
-This demonstrates how to use ScrapeGraphAI for recipe extraction with better Pydantic integration.
+This demonstrates how to use ScrapeGraphAI's crawler for direct URL-to-model extraction.
 """
 
 import os
@@ -11,40 +11,10 @@ from .models import RecipeExtraction, Ingredient
 
 
 def extract_recipe_example():
-    """Example of ScrapeGraphAI usage for recipe extraction."""
+    """Example of ScrapeGraphAI crawler usage for recipe extraction."""
     
-    # Sample web content (this would come from scraping)
-    content = """
-    Title: Classic Chocolate Chip Cookies
-    
-    A delicious recipe for soft and chewy chocolate chip cookies that everyone will love!
-    
-    Ingredients:
-    - 2 1/4 cups all-purpose flour
-    - 1 tsp baking soda
-    - 1 tsp salt
-    - 1 cup butter, softened
-    - 3/4 cup granulated sugar
-    - 3/4 cup brown sugar
-    - 2 large eggs
-    - 2 tsp vanilla extract
-    - 2 cups chocolate chips
-    
-    Instructions:
-    1. Preheat oven to 375°F
-    2. Mix flour, baking soda, and salt in a bowl
-    3. Cream butter and sugars until light and fluffy
-    4. Beat in eggs and vanilla
-    5. Gradually mix in flour mixture
-    6. Stir in chocolate chips
-    7. Drop spoonfuls on baking sheet
-    8. Bake for 9-11 minutes
-    
-    Prep time: 15 minutes
-    Cook time: 10 minutes
-    Serves: 24 cookies
-    Difficulty: Easy
-    """
+    # Example URL (this would be a real recipe URL)
+    example_url = "https://example.com/chocolate-chip-cookies"
     
     # Get API key
     api_key = os.environ.get('OPENAI_API_KEY')
@@ -54,7 +24,7 @@ def extract_recipe_example():
     
     try:
         # Try to import ScrapeGraphAI
-        from scrapegraphai.graphs import JSONScraperGraph
+        from scrapegraphai.graphs import SmartScraperGraph
         
         # Create ScrapeGraphAI configuration
         graph_config = {
@@ -65,19 +35,19 @@ def extract_recipe_example():
         }
         
         # Create prompt for recipe extraction
-        prompt = """Extract comprehensive recipe information from this content. 
+        prompt = """Extract comprehensive recipe information from this web page. 
         Return the data structured according to the RecipeExtraction schema with title, ingredients, instructions, etc."""
         
-        # Use ScrapeGraphAI with our Pydantic schema
-        json_scraper_graph = JSONScraperGraph(
+        # Use ScrapeGraphAI's SmartScraperGraph to crawl and extract directly from URL
+        smart_scraper_graph = SmartScraperGraph(
             prompt=prompt,
-            source=content,
+            source=example_url,  # Direct URL crawling
             schema=RecipeExtraction,
             config=graph_config
         )
         
-        # Execute the extraction
-        result = json_scraper_graph.run()
+        # Execute the crawling and extraction
+        result = smart_scraper_graph.run()
         
         if isinstance(result, dict):
             recipe = RecipeExtraction(**result)
@@ -117,6 +87,7 @@ def extract_recipe_example():
             difficulty="easy",
             tags=["dessert", "cookies", "american"],
             meal_times=["dessert"],
+            source_url=example_url,
         )
     
     print("Extracted Recipe:")

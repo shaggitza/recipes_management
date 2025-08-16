@@ -1,8 +1,8 @@
-"""AI-powered recipe extraction using ScrapeGraphAI."""
+"""AI-powered recipe extraction using ScrapeGraphAI's crawler."""
 
 import logging
 import os
-from typing import Optional, List
+from typing import Optional
 
 from .models import RecipeExtraction
 
@@ -10,7 +10,7 @@ logger = logging.getLogger("app.ai.extractor")
 
 
 class SimpleRecipeExtractor:
-    """Recipe extractor using ScrapeGraphAI for better Pydantic model integration."""
+    """Recipe extractor using ScrapeGraphAI's crawler for direct URL-to-model extraction."""
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize the extractor with OpenAI API key."""
@@ -18,27 +18,25 @@ class SimpleRecipeExtractor:
         if not self.api_key:
             raise ValueError("OpenAI API key is required")
 
-    async def extract_recipe(self, content: str, source_url: str, images: Optional[List[dict]] = None) -> RecipeExtraction:
+    async def extract_recipe_from_url(self, url: str) -> RecipeExtraction:
         """
-        Extract recipe data from web content using ScrapeGraphAI.
+        Extract recipe data directly from URL using ScrapeGraphAI's crawler.
         
         Args:
-            content: Scraped web content
-            source_url: Original URL  
-            images: Optional list of images from the page (ignored)
+            url: URL of the recipe page to extract from
             
         Returns:
             RecipeExtraction object with extracted data
         """
         try:
-            logger.info(f"Extracting recipe from content (length: {len(content)})")
+            logger.info(f"Extracting recipe directly from URL: {url}")
             
             # Import ScrapeGraphAI here to handle import errors gracefully
             try:
-                from scrapegraphai.graphs import JSONScraperGraph
+                from scrapegraphai.graphs import SmartScraperGraph
             except ImportError:
                 logger.warning("ScrapeGraphAI not available, falling back to mock implementation")
-                return self._mock_extraction(content, source_url)
+                return self._mock_extraction(url)
             
             # Create ScrapeGraphAI configuration
             graph_config = {
@@ -51,32 +49,42 @@ class SimpleRecipeExtractor:
             # Create the prompt for recipe extraction
             prompt = self._create_extraction_prompt()
             
-            # Use ScrapeGraphAI with our Pydantic schema
-            json_scraper_graph = JSONScraperGraph(
+            # Use ScrapeGraphAI's SmartScraperGraph to crawl and extract directly from URL
+            smart_scraper_graph = SmartScraperGraph(
                 prompt=prompt,
-                source=content,  # Pass content directly instead of URL
+                source=url,  # Direct URL crawling
                 schema=RecipeExtraction,
                 config=graph_config
             )
             
-            # Execute the extraction
-            result = json_scraper_graph.run()
+            # Execute the crawling and extraction
+            result = smart_scraper_graph.run()
             
             # Ensure source_url is set
             if isinstance(result, dict):
-                result['source_url'] = source_url
+                result['source_url'] = url
                 recipe = RecipeExtraction(**result)
             else:
                 recipe = result
-                recipe.source_url = source_url
+                recipe.source_url = url
             
             logger.info(f"Successfully extracted recipe: {recipe.title}")
             return recipe
             
         except Exception as e:
-            error_msg = f"Recipe extraction failed: {e}"
+            error_msg = f"Recipe extraction failed for {url}: {e}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+    # Backward compatibility method - delegates to new URL-based method
+    async def extract_recipe(self, content: str, source_url: str, images: Optional[list] = None) -> RecipeExtraction:
+        """
+        Backward compatibility method that delegates to URL-based extraction.
+        
+        Note: content and images parameters are ignored since we now extract directly from URL.
+        """
+        logger.warning("extract_recipe() is deprecated, use extract_recipe_from_url() instead")
+        return await self.extract_recipe_from_url(source_url)
 
     def _create_extraction_prompt(self) -> str:
         """Create a prompt for recipe extraction optimized for ScrapeGraphAI."""
@@ -105,7 +113,7 @@ Appliance Settings:
 
 Return the data structured according to the RecipeExtraction schema."""
 
-    def _mock_extraction(self, content: str, source_url: str) -> RecipeExtraction:
+    def _mock_extraction(self, url: str) -> RecipeExtraction:
         """
         Fallback mock extraction when ScrapeGraphAI is not available.
         This is useful for testing and development.
@@ -125,7 +133,7 @@ Return the data structured according to the RecipeExtraction schema."""
             tags=["mock"],
             meal_times=[],
             images=[],
-            source_url=source_url,
+            source_url=url,
             appliance_settings=[]
         )
 

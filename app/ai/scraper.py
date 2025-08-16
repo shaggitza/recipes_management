@@ -1,4 +1,15 @@
-"""Web scraping module for recipe pages using requests and BeautifulSoup as fallback."""
+"""
+DEPRECATED: Web scraping module for recipe pages.
+
+This module is now deprecated. ScrapeGraphAI's SmartScraperGraph handles both
+crawling and extraction directly from URLs, eliminating the need for separate
+scraping and extraction steps.
+
+Use SimpleRecipeExtractor.extract_recipe_from_url() instead.
+"""
+
+# This entire file is deprecated and will be removed in future versions.
+# ScrapeGraphAI's crawler functionality replaces this separate scraping step.
 
 import asyncio
 import logging
@@ -12,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 class RecipeScraper:
-    """Web scraper for recipe pages with fallback to requests/BeautifulSoup."""
+    """DEPRECATED: Web scraper for recipe pages. Use ScrapeGraphAI's crawler instead."""
     
     def __init__(self, timeout: int = 30):
         """Initialize scraper with timeout settings."""
+        logger.warning("RecipeScraper is deprecated. Use ScrapeGraphAI's SmartScraperGraph instead.")
         self.timeout = timeout
         self.session = requests.Session()
         # Set a realistic user agent

@@ -359,28 +359,25 @@ async def test_extraction():
     logger.info("Running extraction system test")
     
     try:
-        # Test basic components
-        from app.ai.scraper import RecipeScraper
+        # Test basic components (scraper removed - now handled by ScrapeGraphAI)
         from app.ai.extractor import RecipeExtractor
         from app.ai.transformer import RecipeTransformer
         
         # Initialize components
-        scraper = RecipeScraper()
         extractor = RecipeExtractor()
         transformer = RecipeTransformer()
 
         # Determine AI backend status
-        ai_backend = "scrapegraphai" if extractor.use_ai else "rule_based_fallback"
+        ai_backend = "scrapegraphai_crawler" if extractor.use_ai else "rule_based_fallback"
         
         test_result = {
             "status": "healthy",
             "components": {
-                "scraper": "initialized",
                 "extractor": "initialized",
                 "transformer": "initialized",
             },
             "ai_backend": ai_backend,
-            "scrapegraphai_available": True,  # Always True since we have fallback
+            "scrapegraphai_crawler_available": True,  # Always True since we have fallback
             "extractor_use_ai": extractor.use_ai,
             "api_key_present": bool(extractor.api_key),
             "version": "1.0.0",

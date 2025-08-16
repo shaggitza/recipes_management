@@ -46,36 +46,32 @@ class RecipeExtractor:
         self.api_key = api_key
         self._extractor = SimpleRecipeExtractor(api_key=api_key)
         
-        logger.info("RecipeExtractor initialized with ScrapeGraphAI backend")
+        logger.info("RecipeExtractor initialized with ScrapeGraphAI crawler backend")
 
-    async def extract_recipe(
-        self, content: str, source_url: str, images: Optional[List[dict]] = None
-    ) -> RecipeExtractionResult:
+    async def extract_recipe_from_url(self, url: str) -> RecipeExtractionResult:
         """
-        Extract recipe with compatibility wrapper.
+        Extract recipe directly from URL using ScrapeGraphAI's crawler.
         
-        Maintains the same interface as the old extractor but uses the new ScrapeGraphAI backend.
-        Images parameter is ignored in the simplified version.
+        This is the new preferred method that uses ScrapeGraphAI's crawler
+        to handle both scraping and extraction in one step.
         """
         try:
-            logger.info(f"Extracting recipe from {source_url} using ScrapeGraphAI")
+            logger.info(f"Extracting recipe directly from URL: {url}")
             
-            # Use the new ScrapeGraphAI extractor (ignore images parameter)
-            recipe_extraction = await self._extractor.extract_recipe(content, source_url)
+            # Use the new URL-based extractor
+            recipe_extraction = await self._extractor.extract_recipe_from_url(url)
             
             # Convert to expected dictionary format
-            recipe_dict = recipe_extraction_to_dict(recipe_extraction, source_url)
+            recipe_dict = recipe_extraction_to_dict(recipe_extraction, url)
             
             return RecipeExtractionResult(
                 success=True,
                 recipe=recipe_dict,
                 error=None,
-                source_url=source_url,
+                source_url=url,
                 extraction_metadata={
-                    "method": "scrapegraphai",
-                    "content_length": len(content),
+                    "method": "scrapegraphai_crawler",
                     "model": "gpt-4o-mini",
-                    "images_analyzed": 0,  # Always 0 in simplified version
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             )
@@ -84,3 +80,18 @@ class RecipeExtractor:
             error_msg = f"Recipe extraction failed: {e}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+    async def extract_recipe(
+        self, content: str, source_url: str, images: Optional[List[dict]] = None
+    ) -> RecipeExtractionResult:
+        """
+        Extract recipe with compatibility wrapper - DEPRECATED.
+        
+        This method is kept for backward compatibility but is deprecated.
+        Use extract_recipe_from_url() instead for better performance.
+        
+        Maintains the same interface as the old extractor but now uses URL-based extraction.
+        Content and images parameters are ignored.
+        """
+        logger.warning("extract_recipe() is deprecated, use extract_recipe_from_url() for better performance")
+        return await self.extract_recipe_from_url(source_url)

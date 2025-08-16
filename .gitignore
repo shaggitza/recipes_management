@@ -63,3 +63,6 @@ ehthumbs.db
 tmp/
 temp/
 static/images/*
+
+# Demo files (not for production)
+demo_*.py
